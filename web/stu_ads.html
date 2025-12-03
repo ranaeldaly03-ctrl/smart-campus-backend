@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ads</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="stu_ads.css">
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="studentName"></h2>
+            </li>
+            <li>
+                <a href="stu_dashboard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_att.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Attendance</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="stu_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_assigment.html">
+                    <i class="fas fa-check-double"></i>
+                    <p>Assignments</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_quiz.html">
+                    <i class="far fa-edit"></i>
+                    <p>Quizzes</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_deg.html">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Degree</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </d
+
+    <div class="content">
+        <div class="title-info">
+            <p>My Courses</p>
+            <i class="fas fa-book"></i>
+        </div>
+
+        <div class="courses-container" id="coursesContainer">
+            <!-- Courses will appear here -->
+        </div>
+    </div>
+
+    <div class="content">
+
+        <div class="title-info">
+            <p>Announcements</p>
+            <i class="fas fa-bullhorn"></i>
+        </div>
+
+        <div id="adsContainer" class="ads-box"></div>
+
+    </div>
+    
+    <script>
+    const api = "http://127.0.0.1:5000";
+    document.addEventListener("DOMContentLoaded", () => {
+            const studentId = localStorage.getItem("user_id");
+            const studentName = localStorage.getItem("user_name");
+            const studentRole = localStorage.getItem("user_role");
+            const studentImage = localStorage.getItem("user_image");
+
+
+            if (!studentName || studentRole !== "Student") {
+                window.location.href = "login.html";
+                return;
+            }
+               
+            document.getElementById("studentName").textContent = studentName;
+                
+            const profilePic = document.getElementById("profilePic");
+            
+             if (studentImage && studentImage !== "null" && studentImage !== ""){
+                    document.getElementById("profilePic").src = `${api}/${studentImage}`;
+                } else {
+                    document.getElementById("profilePic").src = `${api}/uploads/admin.png`;
+                }
+        });
+    let studentId = localStorage.getItem("user_id");
+
+    // Replace your old loadAds with this:
+    async function loadAds(){
+    try{
+        if(!studentId) {
+        document.getElementById("adsContainer").innerHTML = "<p>Please login first.</p>";
+        return;
+        }
+
+        const res = await fetch(`${api}/student/${studentId}/ads`);
+        if(!res.ok){
+        throw new Error("Server returned " + res.status);
+        }
+
+        const payload = await res.json();
+        // handle different possible shapes
+        const ads = Array.isArray(payload) ? payload : (payload.ads || payload.data || []);
+
+        console.log("ads response:", ads); // debug: اتأكدي من البنية هنا
+
+        const box = document.getElementById("adsContainer");
+        box.innerHTML = "";
+
+        if(!ads || ads.length === 0){
+        box.innerHTML = "<p class='muted'>No announcements available.</p>";
+        return;
+        }
+
+        ads.forEach(a => {
+        // map common possible field names
+        const text = a.text || a.message || a.content || a.body || "";
+        const course = a.course_name || a.course || a.course_title || "General";
+        const posted_by = a.posted_by_name || a.posted_by || a.by || (a.user_name ? a.user_name : "Admin");
+        const date = a.created_at || a.date || a.time || "";
+
+        box.insertAdjacentHTML('beforeend', `
+            <div class="ad-card">
+            <p class="ad-text">${escapeHtml(text)}</p>
+            <div class="ad-footer">
+                <span class="course">📘 ${escapeHtml(course)}</span>
+                <span class="by">👤 ${escapeHtml(posted_by)}</span>
+                <span class="date">🕒 ${escapeHtml(date)}</span>
+            </div>
+            </div>`);
+        });
+
+    }catch(err){
+        console.error("Error loading announcements:", err);
+        document.getElementById("adsContainer").innerHTML = "<p class='muted'>Error loading announcements.</p>";
+    }
+    }
+
+    // small helper to avoid XSS
+    function escapeHtml(s){
+    if(!s) return "";
+    return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+    }
+
+    // call it
+    loadAds();
+    </script>
+
+
+</html>

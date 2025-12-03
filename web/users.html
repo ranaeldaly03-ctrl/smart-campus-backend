@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="users.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <title>Users</title>
+</head>
+<body>
+
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="adminName"></h2>
+            </li>
+            <li>
+                <a href="admin.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="users.html">
+                    <i class="fas fa-user-group"></i>
+                    <p>Users</p>
+                </a>
+            </li>
+            <li>
+                <a href="courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="admin_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="users">            
+        <div class="title_info">
+            <i class="fas fa-users"></i>
+            <h1 class="user">Veiw users by role</h1>
+        </div>
+        
+        <div class="filter">
+            <label for="role">Select Role</label>
+            <select id="role" onchange="toggleLevel()">
+                <option value="">--Choose Role--</option>
+                <option value="student">Students</option>
+                <option value="Instractor">Professors</option>
+                <option value="admin">Admins</option>
+            </select>
+
+
+            <div id="levelFilter">
+                <lable for="level">Select Level</lable>
+                <select id="level">
+                    <option value="">Levels</option>
+                    <option value="1">Level 1</option>
+                    <option value="2">Level 2</option>
+                    <option value="3">Level 3</option>
+                    <option value="4">Level 4</option>
+                </select>
+            </div>
+            <button onclick="loadusers()">Veiw</button>
+        </div>
+        
+        <p class="msg"></p>
+
+
+        <table id="usersTable">
+            <thead>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Level</th>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <a href="addUser.html"> Add User</a>
+
+    </div>    
+
+
+    <script>
+        const api = "http://127.0.0.1:5000";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const name = localStorage.getItem("user_name");
+            const role = localStorage.getItem("user_role");
+            const image = localStorage.getItem("user_image");
+
+
+            if (!name || role !== "Admin") {
+                window.location.href = "login.html";
+                return;
+            }
+               
+            document.getElementById("adminName").textContent = name;
+                
+            const profilePic = document.getElementById("profilePic");
+            
+             if (image && image !== "null" && image !== ""){
+                    document.getElementById("profilePic").src = `${api}/${image}`;
+                } else {
+                    document.getElementById("profilePic").src = `${api}/uploads/admin.png`;
+                }
+
+            
+        });
+
+
+        function toggleLevel(){
+            const role = document.getElementById("role").value;
+            const levelDiv = document.getElementById("levelFilter");
+
+            if (role == "student"){
+                levelDiv.style.display = "inline-block";
+            } else{
+                levelDiv.style.display = "none";
+            }
+        }
+
+
+        async function loadusers() {
+
+            const level = document.getElementById("level").value;
+            const role = document.getElementById("role").value;
+            const msg = document.querySelector(".msg");
+            const tbody = document.querySelector("#usersTable tbody");
+
+            tbody.innerHTML ="";
+            msg.textContent = "";
+
+            if (!role){
+                msg.style.color = "red";
+                msg.textContent = "⚠️ please select a role first.";
+                return;
+            }
+
+            msg.style.color = "green";
+            msg.textContent = "⏳ Loading...";
+
+            try{
+                let url = `${api}/users/${role}`;
+                if(role === "student" && level) url += `?level=${level}`;
+
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if(!data.users || data.users.length === 0){
+                    msg.style.color = "orange";
+                    msg.textContent = `No ${role}s found.`;
+                    return;
+                }
+
+                msg.textContent ="";
+                data.users.forEach(u => {
+                    const row=`
+                        <tr>
+                            <td>${u.id}</td>
+                            <td>${u.name}</td>
+                            <td>${u.email}</td>
+                            <td>${u.role}</td>
+                            ${u.level ? `<td>Level ${u.level}</td>` : ""}
+                        </tr>    
+                        `;
+                    tbody.innerHTML += row;    
+                
+                });
+            } catch (error){
+                msg.style.color = "red";
+                msg.textContent = "❌ Error loading users.";
+                console.error(error);
+            }
+        }
+
+        
+    </script>
+</body>
+</html>

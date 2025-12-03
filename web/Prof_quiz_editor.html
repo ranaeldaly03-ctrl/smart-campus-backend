@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="Prof_courses.css">    
+<head>
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="ProfessorName"></h2>
+            </li>
+            <li>
+                <a href="Prof_DaskBoard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="generate_qr.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Generate QR</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_students.html">
+                    <i class="fas fa-user-group"></i>
+                    <p>Students</p>
+                </a>
+            </li>
+            <li>
+                <a class="active"  href="Prof_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+             <li><a href="prof_assigment.html"><i class="far fa-edit"></i><p>Assignments</p></a></li>
+            <li>
+                <a href="Prof_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+
+
+    <div class="content">
+        <div class="box">
+        <h3 id="createMsg">Quiz Editor</h3>
+
+        <!-- لو حابة تضيف اختيار الكورس لو نحتاجه لاحقًا -->
+        <div class="row" style="display:none;">
+            <label>Course</label>
+            <select id="courseSelect"><option value="">-- choose --</option></select>
+        </div>
+
+        <hr>
+
+        <h3>Questions</h3>
+        <div id="questionsArea"></div>
+
+        <div class="row">
+            <label>Question text</label>
+            <textarea id="qText" rows="3"></textarea>
+        </div>
+
+        <div class="row">
+            <label>Type</label>
+            <select id="qType">
+            <option value="MCQ">MCQ</option>
+            <option value="TF">True/False</option>
+            <option value="Short">Short Answer</option>
+            </select>
+        </div>
+
+        <div class="row" id="optsBox">
+            <label>Options (MCQ — one per line)</label>
+            <textarea id="qOptions" placeholder="Option 1&#10;Option 2&#10;Option 3" rows="3"></textarea>
+        </div>
+
+        <div class="row">
+            <label>Correct answer</label>
+            <input id="qCorrect" placeholder="text or option index (1,2,...)" />
+        </div>
+
+        <div class="row">
+            <button id="addQuestionBtn">Add Question</button>
+            <button id="publishQuizBtn" style="margin-left:8px;">Publish (students can take)</button>
+            <button id="saveLocalBtn" style="margin-left:8px;background:#9aaebf;color:white">Save locally</button>
+        </div>
+
+        <div id="status"></div>
+        </div>
+
+    </div>
+  
+
+    <script>
+    /* Quiz editor script — paste into Prof_quiz_editor.html
+    Requirements:
+    - Backend endpoints: /add_assignment, /quiz/:quiz_id, /quiz/:quiz_id/questions (POST, DELETE), /publish_quiz/:quiz_id
+    */
+    (() => {
+    const api = "http://127.0.0.1:5000";
+    const profId = localStorage.getItem("user_id");
+    const profName = localStorage.getItem("user_name");
+    const profRole = localStorage.getItem("user_role");
+    const profImage = localStorage.getItem("user_image");
+
+    let currentQuizId = null;
+    let questions = []; // local question objects: { id?, q_type, question_text, options[], correct, _save_failed? }
+
+    // ---------------- UI helpers ----------------
+    function showStatus(msg, isError=false) {
+        const el = document.getElementById('status');
+        if (!el) return;
+        el.style.color = isError ? '#b00020' : '#154360';
+        el.textContent = msg;
+    }
+
+    function clearQuestionInputs(){
+        document.getElementById('qText').value = '';
+        document.getElementById('qOptions').value = '';
+        document.getElementById('qCorrect').value = '';
+        document.getElementById('qType').value = 'MCQ';
+        document.getElementById('optsBox').style.display = 'block';
+    }
+
+    function escapeHtml(s){
+        if(!s && s !== 0) return '';
+        return String(s).replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
+    }
+
+    function renderQuestions(){
+        const area = document.getElementById('questionsArea');
+        area.innerHTML = '';
+        questions.forEach((q, idx) => {
+        const d = document.createElement('div');
+        d.className = 'q-item';
+        d.style.padding = '8px';
+        d.style.border = '1px solid #e6eefb';
+        d.style.marginBottom = '8px';
+        const optsHtml = q.options && q.options.length ? `<small>Options: ${q.options.map(o=>escapeHtml(o)).join(' | ')}</small><br>` : '';
+        const statusNote = q._save_failed ? '<span style="color:#b00020"> (save failed)</span>' : '';
+        d.innerHTML = `
+            <strong>#${idx+1}</strong> (${escapeHtml(q.q_type)}) - ${escapeHtml(q.question_text)}${statusNote}<br>
+            ${optsHtml}
+            <small>Correct: ${escapeHtml(String(q.correct||''))}</small>
+            <div style="margin-top:8px">
+            <button data-i="${idx}" class="edit-btn">Edit</button>
+            <button data-i="${idx}" class="del-btn" style="margin-left:6px">Delete</button>
+            </div>
+        `;
+        area.appendChild(d);
+        });
+
+        // attach handlers
+        Array.from(area.getElementsByClassName('edit-btn')).forEach(btn=>{
+        btn.onclick = () => {
+            const i = Number(btn.dataset.i);
+            const q = questions[i];
+            document.getElementById('qText').value = q.question_text || '';
+            document.getElementById('qType').value = q.q_type || 'MCQ';
+            document.getElementById('qOptions').value = (q.options||[]).join("\n");
+            document.getElementById('qCorrect').value = q.correct || "";
+            // remove from array until saved/updated
+            questions.splice(i,1);
+            renderQuestions();
+        };
+        });
+
+        Array.from(area.getElementsByClassName('del-btn')).forEach(btn=>{
+        btn.onclick = async () => {
+            const i = Number(btn.dataset.i);
+            const q = questions[i];
+            if(!confirm("Delete this question?")) return;
+
+            // if question has server id -> call DELETE endpoint
+            if(q && q.id && currentQuizId){
+            try {
+                showStatus("Deleting question...");
+                const res = await fetch(`${api}/quiz/${currentQuizId}/questions/${q.id}`, { method: "DELETE" });
+                if(!res.ok){
+                const txt = await res.text().catch(()=>null);
+                showStatus("Server delete failed: " + (txt || res.status), true);
+                return;
+                }
+                // deleted on server, remove locally
+            } catch(e){
+                showStatus("Network error deleting question", true);
+                return;
+            }
+            }
+            // remove locally
+            questions.splice(i,1);
+            renderQuestions();
+            showStatus("Question deleted.");
+        };
+        });
+    }
+
+    // ---------------- utility ----------------
+    function parseOptionsField(opts){
+        if(!opts) return [];
+        if(Array.isArray(opts)) return opts;
+        try { return JSON.parse(opts); } catch(e){ return String(opts).split(/\r?\n/).filter(Boolean); }
+    }
+
+    // ---------------- load existing quiz ----------------
+    async function loadExistingQuiz(qid){
+        try {
+        showStatus("Loading quiz...");
+        const res = await fetch(`${api}/quiz/${qid}`);
+        if(!res.ok){
+            showStatus("Failed to load quiz", true);
+            return;
+        }
+        const quiz = await res.json();
+        document.getElementById('quizTitle').value = quiz.title || '';
+        // if page had dueDate field use it; optional
+        const dueInput = document.getElementById('dueDate');
+        if(dueInput && quiz.due_date) dueInput.value = quiz.due_date;
+
+        questions = (quiz.questions || []).map(q => ({
+            id: q.id || q.question_id || null,
+            q_type: q.q_type || q.type || 'MCQ',
+            question_text: q.question_text || q.text || '',
+            options: parseOptionsField(q.options),
+            correct: q.correct || q.correct_answer || q.answer || ''
+        }));
+        currentQuizId = qid;
+        document.getElementById('createMsg') && (document.getElementById('createMsg').textContent = "Editing quiz " + currentQuizId);
+        renderQuestions();
+        showStatus("Quiz loaded.");
+        } catch(err){
+        console.error(err);
+        showStatus("Network error loading quiz", true);
+        }
+    }
+
+    // ---------------- flush local questions to server ----------------
+    async function flushLocalQuestionsToServer(quizId) {
+        if(!quizId) throw new Error("quizId required");
+        if(!questions || questions.length === 0) return;
+
+        showStatus("Saving local questions to server...");
+        for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        if (q.id) continue; // already saved
+        try {
+            const res = await fetch(`${api}/quiz/${quizId}/questions`, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({
+                q_type: q.q_type,
+                question_text: q.question_text,
+                options: q.options,
+                correct: q.correct
+            })
+            });
+            const text = await res.text().catch(()=>null);
+            let json = null;
+            try{ json = text ? JSON.parse(text) : null; } catch(e){}
+            if(!res.ok){
+            console.warn("Failed to save question:", text || res.status);
+            q._save_failed = true;
+            continue;
+            }
+            const qid = json?.question_id || json?.id || null;
+            q.id = qid;
+            q._save_failed = false;
+        } catch(err) {
+            console.error("Network error saving question:", err);
+            q._save_failed = true;
+        }
+        }
+        renderQuestions();
+        const failed = questions.filter(q => q._save_failed);
+        if(failed.length) showStatus(`Saved with ${failed.length} failures (check network)`, true);
+        else showStatus("All local questions saved.");
+    }
+
+    // ---------------- create quiz handler (no redirect) ----------------
+    async function createQuizHandler(e){
+        e && e.preventDefault();
+        const courseId = document.getElementById('courseSelect')?.value;
+        const title = document.getElementById('quizTitle')?.value?.trim();
+        const due = document.getElementById('dueDate')?.value || null;
+        if(!courseId) return alert("Choose course");
+        if(!title) return alert("Enter title");
+
+        showStatus("Creating quiz...");
+        try {
+        const payload = {
+            course_id: Number(courseId),
+            title: title,
+            description: "Quiz created from editor",
+            type: "Quiz",
+            due_date: due,
+            total_mark: 0
+        };
+        const res = await fetch(`${api}/add_assignment`, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify(payload)
+        });
+        const text = await res.text().catch(()=>null);
+        let json = null;
+        try { json = text ? JSON.parse(text) : null; } catch(e){}
+
+        if(!res.ok) {
+            showStatus("Error creating quiz: " + (json?.message || text || res.status), true);
+            return;
+        }
+
+        const createdId = json?.quiz_id || json?.assignment_id || json?.id || json?.insertId || null;
+        if(!createdId){
+            showStatus("Quiz created but server did not return id. Check API.", true);
+            return;
+        }
+
+        // set current id and update UI (no redirect)
+        currentQuizId = createdId;
+        document.getElementById('createMsg') && (document.getElementById('createMsg').textContent = "Editing quiz " + currentQuizId);
+
+        // push local questions to server (if any)
+        await flushLocalQuestionsToServer(currentQuizId);
+
+        // update URL so user can bookmark/share the editor for this quiz
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('quiz_id', currentQuizId);
+        window.history.replaceState({}, '', newUrl.toString());
+
+        showStatus("Quiz created and questions saved. You can now add more questions.");
+        } catch(err){
+        console.error(err);
+        showStatus("Network error creating quiz. Check server.", true);
+        }
+    }
+
+    // ---------------- add question handler ----------------
+    async function addQuestionHandler(e){
+        e && e.preventDefault();
+        const txt = document.getElementById('qText').value.trim();
+        const type = document.getElementById('qType').value;
+        const optsRaw = document.getElementById('qOptions').value.trim();
+        const correct = document.getElementById('qCorrect').value.trim();
+
+        if(!txt) { showStatus("Enter question text", true); return; }
+        const options = type === 'MCQ' ? optsRaw.split(/\r?\n/).filter(Boolean) : [];
+
+        if(!currentQuizId){
+        // store locally until quiz created
+        questions.push({ id:null, q_type: type, question_text: txt, options, correct });
+        renderQuestions();
+        clearQuestionInputs();
+        showStatus("Question saved locally. Create the quiz first to persist on server.");
+        return;
+        }
+
+        const btn = document.getElementById('addQuestionBtn');
+        btn.disabled = true;
+        showStatus("Saving question...");
+        try {
+        const res = await fetch(`${api}/quiz/${currentQuizId}/questions`, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ q_type: type, question_text: txt, options, correct })
+        });
+        const text = await res.text().catch(()=>null);
+        let json = null;
+        try { json = text ? JSON.parse(text) : null; } catch(e){}
+
+        if(!res.ok) {
+            showStatus("Error adding question: " + (json?.message || text || res.status), true);
+            btn.disabled = false;
+            return;
+        }
+
+        const qid = json?.question_id || json?.id || null;
+        questions.push({ id: qid, q_type: type, question_text: txt, options, correct });
+        renderQuestions();
+        clearQuestionInputs();
+        showStatus("Question added.");
+        } catch(err){
+        console.error(err);
+        showStatus("Network error adding question. Check server.", true);
+        } finally {
+        btn.disabled = false;
+        }
+    }
+
+    // ---------------- publish quiz ----------------
+    async function publishQuizHandler(e){
+        e && e.preventDefault();
+        if(!currentQuizId){ showStatus("No quiz selected", true); return; }
+        showStatus("Publishing quiz...");
+        try {
+        const res = await fetch(`${api}/publish_quiz/${currentQuizId}`, { method: "POST" });
+        const json = await res.json().catch(()=>null);
+        if(!res.ok){ showStatus("Publish failed: " + (json?.message || res.status), true); return; }
+        showStatus(json?.message || "Quiz published successfully.");
+        } catch(err){
+        console.error(err);
+        showStatus("Network error publishing quiz.", true);
+        }
+    }
+
+    // ---------------- load courses into select (optional) ----------------
+    async function loadCoursesIntoSelect(){
+        const select = document.getElementById('courseSelect');
+        if(!select) return;
+        select.innerHTML = '<option value="">-- choose --</option>';
+        try {
+        const res = await fetch(`${api}/instructor/${profId}/courses`);
+        if(!res.ok) return;
+        const list = await res.json();
+        const arr = Array.isArray(list) ? list : (list.courses || list.data || []);
+        arr.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id ?? c.course_id;
+            opt.textContent = c.course_name ?? c.name ?? `Course ${opt.value}`;
+            select.appendChild(opt);
+        });
+        } catch(e){
+        console.warn("Can't load courses", e);
+        }
+    }
+
+    // ---------------- init bindings ----------------
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (!profName || profRole !== "Instructor") {
+        window.location.href = "login.html";
+        return;
+        }
+        document.getElementById("ProfessorName").textContent = profName;
+        const pic = document.getElementById("profilePic");
+        if (pic) pic.src = profImage && profImage !== "null" ? `${api}/${profImage}` : `${api}/uploads/default.png`;
+
+        document.getElementById('qType').addEventListener('change', () => {
+        document.getElementById('optsBox').style.display = document.getElementById('qType').value === 'MCQ' ? 'block' : 'none';
+        });
+
+        document.getElementById('addQuestionBtn').addEventListener('click', addQuestionHandler);
+        document.getElementById('publishQuizBtn').addEventListener('click', publishQuizHandler);
+        document.getElementById('createQuizBtn')?.addEventListener('click', createQuizHandler);
+
+        await loadCoursesIntoSelect();
+
+        const params = new URLSearchParams(window.location.search);
+        const qid = params.get('quiz_id');
+        if(qid){
+        currentQuizId = qid;
+        document.getElementById('createMsg') && (document.getElementById('createMsg').textContent = "Editing quiz " + currentQuizId);
+        await loadExistingQuiz(currentQuizId);
+        }
+    });
+
+    // expose functions for debugging (optional)
+    window._quizEditor = { questions, flushLocalQuestionsToServer, loadExistingQuiz };
+
+    })();
+    </script>
+
+
+
+
+</body>
+</html>

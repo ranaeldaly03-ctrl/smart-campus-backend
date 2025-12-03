@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ads</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="Prof_ads.css">
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="ProfessorName"></h2>
+            </li>
+            <li>
+                <a href="Prof_DaskBoard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="generate_qr.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Generate QR</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_students.html">
+                    <i class="fas fa-user-group"></i>
+                    <p>Students</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+             <li><a href="prof_assigment.html"><i class="far fa-edit"></i><p>Assignments</p></a></li>
+            <li>
+                <a class="active"  href="Prod_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+
+        <div class="title-info">
+            <p>Create Announcement</p>
+            <i class="fas fa-bullhorn"></i>
+        </div>
+
+        <div class="card">
+
+            <div class="row">
+                <label for="courseSelect">Select Target</label>
+                <select id="courseSelect">
+                    <option value="all">All Courses</option>
+                </select>
+            </div>
+
+            <div class="row">
+                <label for="adsContent">Announcement Text</label>
+                <textarea id="adsContent" rows="4" placeholder="Write your announcement here..."></textarea>
+            </div>
+
+            <button id="publishBtn" class="btn primary">Publish</button>
+
+            <p id="responseMsg" class="response hidden"></p>
+        </div>
+
+    </div>
+
+
+
+    <script>
+    const api = "http://127.0.0.1:5000";
+
+    // نحفظ المتغيرات الأساسية هنا
+    const profId = localStorage.getItem("user_id");
+    const profName = localStorage.getItem("user_name");
+    const profRole = localStorage.getItem("user_role");
+    const profImage = localStorage.getItem("user_image");
+
+    // Helper لعرض رسالة
+    function showResp(text, ok = true) {
+      const el = document.getElementById("responseMsg");
+      el.classList.remove("hidden", "ok", "err");
+      el.classList.add(ok ? "ok" : "err");
+      el.textContent = text;
+    }
+
+    // عرض البروفايل والتحقق من الدور
+    function fillProfile() {
+      if (!profName || profRole !== "Instructor") {
+        window.location.href = "login.html";
+        return false;
+      }
+      document.getElementById("ProfessorName").textContent = profName;
+      const profilePic = document.getElementById("profilePic");
+      if (profilePic) {
+        profilePic.src = (profImage && profImage !== "null") ? `${api}/${profImage}` : `${api}/uploads/default.png`;
+      }
+      return true;
+    }
+
+    // تحميل كورسات الدكتور وإضافة خيارات للصنف
+    async function loadCourses() {
+      const select = document.getElementById("courseSelect");
+      // تأكدي إن العنصر موجود
+      if (!select) return;
+
+      // أضفنا خيار "All" كأول خيار دائمًا
+      select.innerHTML = '<option value="all">All Courses</option>';
+
+      try {
+        const res = await fetch(`${api}/instructor/${profId}/courses`);
+        if (!res.ok) {
+          console.warn("loadCourses: server returned", res.status);
+          showResp("لم أستطع تحميل الكورسات (رمز " + res.status + ")", false);
+          return;
+        }
+        const data = await res.json();
+        // البيانات ممكن تكون مصفوفة أو كائن يحمل مصفوفة
+        const list = Array.isArray(data) ? data : (data.courses || data.data || []);
+        if (!list || list.length === 0) {
+          // لو مش لاقي كورسات ما نعملش خطأ بسيط
+          return;
+        }
+        list.forEach(course => {
+          const opt = document.createElement("option");
+          opt.value = course.id ?? course.course_id ?? course.courseId;
+          opt.textContent = course.course_name ?? course.name ?? `Course ${opt.value}`;
+          select.appendChild(opt);
+        });
+      } catch (err) {
+        console.error("Error loading courses:", err);
+        showResp("خطأ بالشبكة عند تحميل الكورسات. تأكدي من تشغيل السيرفر و إعدادات CORS.", false);
+      }
+    }
+
+    // نشر الإعلان
+    async function publishAds() {
+      const courseId = document.getElementById("courseSelect").value;
+      const text = document.getElementById("adsContent").value.trim();
+
+      if (!text) {
+        alert("Please write the announcement text");
+        return;
+      }
+
+      const payload = {
+        instructor_id: profId ? Number(profId) : null,
+        course_id: courseId === "all" ? null : Number(courseId),
+        text: text
+      };
+
+      try {
+        const res = await fetch(`${api}/add_ads`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload)
+        });
+
+        const reply = await res.json().catch(()=>({ message: res.statusText || "No response" }));
+
+        if (!res.ok) {
+          showResp(reply.message || `خطأ: ${res.status}`, false);
+          return;
+        }
+
+        // نجاح
+        showResp(reply.message || "Announcement published.", true);
+        // تمسحي الحقل لو حبّيتي
+        document.getElementById("adsContent").value = "";
+      } catch (err) {
+        console.error("Publish error:", err);
+        showResp("خطأ بالشبكة أثناء نشر الإعلان. تأكدي من تشغيل السيرفر و إعدادات CORS.", false);
+      }
+    }
+
+    // init بعد DOM
+    document.addEventListener("DOMContentLoaded", async () => {
+      const ok = fillProfile();
+      if (!ok) return;
+      await loadCourses();
+
+      document.getElementById("publishBtn").addEventListener("click", publishAds);
+    });
+  </script>
+</body>
+</html>
+content

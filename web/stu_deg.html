@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Degree</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="stu_deg.css">
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="studentName"></h2>
+            </li>
+            <li>
+                <a href="stu_dashboard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_att.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Attendance</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_assigment.html">
+                    <i class="fas fa-check-double"></i>
+                    <p>Assignments</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_quiz.html">
+                    <i class="far fa-edit"></i>
+                    <p>Quizzes</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="stu_deg.html">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Degree</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="title-info"><p>My Grades</p></div>
+
+        <div id="gradesContainer"></div>
+    </div>
+
+
+    <script>
+    const api = "http://127.0.0.1:5000";
+
+    document.addEventListener("DOMContentLoaded", () => {
+    const studentId = localStorage.getItem("user_id");
+    const studentName = localStorage.getItem("user_name");
+    const studentRole = localStorage.getItem("user_role");
+    const studentImage = localStorage.getItem("user_image");
+
+    // حماية بسيطة
+    if (!studentId || studentRole !== "Student") {
+        document.getElementById("msg").textContent = "You must be logged in as a Student.";
+        console.warn("Not logged in as Student or missing studentId");
+        return;
+    }
+
+    // عرض الاسم والصورة (لو عندك عناصر للعرض)
+    const nameEl = document.getElementById("studentName");
+    if (nameEl) nameEl.textContent = studentName || "Student";
+
+    const profilePicEl = document.getElementById("profilePic");
+    if (profilePicEl) {
+        if (studentImage && studentImage !== "null") {
+        profilePicEl.src = studentImage.startsWith("http") ? studentImage : `${api}/${studentImage.replace(/^\/+/, '')}`;
+        } else {
+        profilePicEl.src = `${api}/uploads/default.png`;
+        }
+    }
+
+    // شغّل تحميل الدرجات
+    loadGrades(studentId).catch(err => {
+        console.error("Failed to load grades:", err);
+        const msg = document.getElementById("msg");
+        if (msg) msg.textContent = "Error loading grades: " + err.message;
+    });
+    });
+
+    async function loadGrades(studentId) {
+    if (!studentId) throw new Error("studentId is required");
+
+    const res = await fetch(`${api}/student/${studentId}/grades`);
+    if (!res.ok) {
+        const text = await res.text().catch(()=>"");
+        throw new Error(`API error ${res.status} ${text}`);
+    }
+
+    const data = await res.json();
+
+    // هيكل متوقع من الـ API: { grades: [...], totals: [...] }
+    const grades = Array.isArray(data.grades) ? data.grades : (Array.isArray(data) ? data : []);
+    const totals = Array.isArray(data.totals) ? data.totals : [];
+
+    // جمع الدرجات بحسب الكورس
+    const byCourse = {};
+    grades.forEach(g => {
+        const cid = String(g.course_id ?? g.courseId ?? g.course); // مرونة لاسم الحقل
+        if (!byCourse[cid]) {
+        // هنا استخدمنا nullish بالكامل ثم fallback
+        const courseName = (g.course_name ?? g.course ?? (`Course ${cid}`));
+        byCourse[cid] = {
+            course_name: courseName,
+            items: [],
+            sum_grade: 0,
+            sum_total: 0
+        };
+        }
+
+        // احفظ البند
+        const item = {
+        assignment_title: g.assignment_title ?? g.title ?? g.name ?? "Assignment",
+        grade: (g.grade === null || g.grade === undefined) ? null : g.grade,
+        total: (g.total_grade === null || g.total_grade === undefined) ? (g.total_grade ?? g.total_mark ?? null) : g.total_grade,
+        course_id: g.course_id ?? g.courseId ?? null
+        };
+
+        byCourse[cid].items.push(item);
+
+        // تجمعات بسيطة لو موجودة
+        if (typeof item.grade === "number") byCourse[cid].sum_grade += Number(item.grade);
+        if (typeof item.total === "number") byCourse[cid].sum_total += Number(item.total);
+    });
+
+    // خريطة totals لو رجّعها الـ API
+    const totalsMap = {};
+    totals.forEach(t => {
+        const cid = String(t.course_id ?? t.courseId ?? t.course);
+        totalsMap[cid] = t.total_marks ?? t.total_grade ?? t.total ?? 0;
+    });
+
+    // بناء الـ DOM
+    const container = document.getElementById("gradesContainer");
+    if (!container) {
+        console.warn("No #gradesContainer element found in DOM");
+        return;
+    }
+    container.innerHTML = "";
+
+    const courseIds = Object.keys(byCourse);
+    if (courseIds.length === 0) {
+        container.innerHTML = "<p class='muted'>No grades yet.</p>";
+        return;
+    }
+
+    courseIds.forEach(cid => {
+        const c = byCourse[cid];
+        const declaredTotal = totalsMap[cid] ?? c.sum_total ?? 0;
+
+        // items HTML
+        const itemsHtml = c.items.map(it => {
+        const gradeText = (it.grade === null || it.grade === undefined) ? "-" : it.grade;
+        const totalText = (it.total === null || it.total === undefined) ? "" : ` / ${it.total}`;
+        return `
+            <div class="grade-line">
+            <div class="left">${escapeHtml(it.assignment_title)}</div>
+            <div class="right">${escapeHtml(String(gradeText))}${totalText}</div>
+            </div>
+        `;
+        }).join("");
+
+        // نسبة/مجموع لو عايزة (لو sum_total موجود)
+        const sumInfo = (c.sum_total > 0)
+        ? `<div class="calc">Sum: <strong>${c.sum_grade}</strong> / ${c.sum_total}</div>`
+        : "";
+
+        const html = `
+        <div class="grade-card">
+            <h3 class="course-title">${escapeHtml(c.course_name)}</h3>
+            <div class="grade-items">${itemsHtml}</div>
+            ${sumInfo}
+            <div class="course-total">Declared Total: <strong>${declaredTotal}</strong></div>
+        </div>
+        `;
+        container.innerHTML += html;
+    });
+    }
+
+    // small helper to avoid XSS
+    function escapeHtml(s) {
+    if (s === null || s === undefined) return "";
+    return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+    </script>
+
+    </body>
+</html>

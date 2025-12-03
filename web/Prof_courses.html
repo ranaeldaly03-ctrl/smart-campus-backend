@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Upload Resources & Assessments</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+  <link rel="stylesheet" href="Prof_courses.css" />
+</head>
+<body>
+  <div class="menu">
+    <ul>
+      <li class="profile">
+        <div class="img-box">
+          <img id="profilePic" src="" alt="profile">
+        </div>
+        <h2 id="ProfessorName"></h2>
+      </li>
+      <li><a href="Prof_DaskBoard.html"><i class="fas fa-home"></i><p>dashboard</p></a></li>
+      <li><a href="generate_qr.html"><i class="fas fa-qrcode"></i><p>Generate QR</p></a></li>
+      <li><a href="Prof_students.html"><i class="fas fa-user-group"></i><p>Students</p></a></li>
+      <li><a class="active" href="Prof_courses.html"><i class="fa fa-list-alt"></i><p>Courses</p></a></li>
+       <li><a href="prof_assigment.html"><i class="far fa-edit"></i><p>Assignments</p></a></li>
+      <li><a href="Prof_ads.html"><i class="fab fa-adversal"></i><p>ADS</p></a></li>
+      <li><a href="Prof_schedule.html"><i class="fas fa-table"></i><p>Tables</p></a></li>
+      <li class="log-out"><a href="login.html"><i class="fas fa-sign-out"></i><p>log Out</p></a></li>
+    </ul>
+  </div>
+
+  <div class="content">
+    <div class="title-info">
+      <p>Upload Resources & Assessments</p>
+      <i class="fas fa-cloud-upload-alt"></i>
+    </div>
+
+    <div class="box card">
+      <div class="row">
+        <label for="courseSelect">Select Course</label>
+        <select id="courseSelect"><option value="">-- Choose a course --</option></select>
+      </div>
+
+      <div class="row">
+        <label for="actionSelect">Action</label>
+        <select id="actionSelect">
+          <option value="">-- Select action --</option>
+          <option value="book">Upload Book</option>
+          <option value="lecture">Upload Lecture</option>
+          <option value="assignment">Add Assignment</option>
+          <option value="quiz">Create Quiz</option>
+        </select>
+      </div>
+
+      <!-- Book / Lecture upload form -->
+      <form id="bookForm" class="hidden" enctype="multipart/form-data">
+        <div class="row">
+          <label for="bookFile">File</label>
+          <input id="bookFile" name="file" type="file" accept=".pdf,.epub,.docx,.zip,.mp4" required>
+        </div>
+        <div class="row">
+          <label for="bookTitle">Title</label>
+          <input id="bookTitle" name="title" type="text" placeholder="Enter title" required>
+        </div>
+        <div class="row actions">
+          <button id="uploadBookBtn" class="btn primary" type="button">Upload</button>
+        </div>
+        <p class="note">Will be sent to: <code>POST /upload_book</code> (multipart/form-data)</p>
+      </form>
+
+      <!-- Assignment form -->
+      <form id="assignmentForm" class="hidden" enctype="multipart/form-data">
+        <div class="row">
+          <label for="assignTitle">Assignment Title</label>
+          <input id="assignTitle" type="text" placeholder="Enter title" required>
+        </div>
+        <div class="row">
+          <label for="assignDesc">Description</label>
+          <textarea id="assignDesc" rows="3" placeholder="Optional description"></textarea>
+        </div>
+        <div class="row">
+          <label for="assignTotal">Total Marks</label>
+          <input id="assignTotal" type="number" min="0" required>
+        </div>
+        <div class="row">
+          <label for="assignDate">Due Date</label>
+          <input id="assignDate" type="date" required>
+        </div>
+        <div class="row">
+          <label for="assignFile">Assignment File (optional)</label>
+          <input id="assignFile" name="file" type="file" accept=".pdf,.docx,.pptx,.zip,.mp4">
+        </div>
+        <div class="row actions">
+          <button id="createAssignBtn" class="btn primary" type="button">Add Assignment</button>
+        </div>
+        <p class="note">Will be sent to: <code>POST /add_assignment</code> (JSON or multipart/form-data if file attached)</p>
+      </form>
+
+      <!-- Quiz form -->
+      <form id="quizForm" class="hidden">
+        <div class="row">
+          <label for="quizTitle">Quiz Title</label>
+          <input id="quizTitle" type="text" placeholder="Enter quiz title" required>
+        </div>
+        <div class="row">
+          <label for="quizTotal">Total Marks</label>
+          <input id="quizTotal" type="number" min="0" required>
+        </div>
+        <div class="row">
+          <label for="quizDate">Date & Time</label>
+          <input id="quizDate" type="datetime-local">
+        </div>
+        <div class="row actions">
+          <button id="createQuizBtn" class="btn primary" type="button">Create Quiz</button>
+        </div>
+        <p class="note">Creates assignment row with <code>type='Quiz'</code> and returns its id.</p>
+      </form>
+
+      <div id="response" class="response hidden" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+
+  <script>
+  (function(){
+    const api = "http://127.0.0.1:5000";
+    const profId = localStorage.getItem("user_id");
+
+    // DOM refs
+    const nameEl = document.getElementById("ProfessorName");
+    const picEl = document.getElementById("profilePic");
+    const courseSelect = document.getElementById("courseSelect");
+    const actionSelect = document.getElementById("actionSelect");
+    const bookForm = document.getElementById("bookForm");
+    const assignmentForm = document.getElementById("assignmentForm");
+    const quizForm = document.getElementById("quizForm");
+    const responseBox = document.getElementById("response");
+
+    function esc(s){ return String(s||""); }
+
+    function showResponse(text, isError=false){
+      responseBox.classList.remove('hidden');
+      responseBox.style.color = isError ? '#b00020' : '#154360';
+      responseBox.textContent = text;
+    }
+
+    function buildUrlFromPath(p){
+      if(!p) return null;
+      if(p.startsWith("http://")||p.startsWith("https://")) return p;
+      p = p.replace(/^\/+/, '');
+      if(p.startsWith("uploads/") || p.startsWith("static/")) return `${api}/${p}`;
+      return `${api}/uploads/${p}`;
+    }
+
+    function fillProfile(){
+      const profName = localStorage.getItem("user_name");
+      const profImage = localStorage.getItem("user_image");
+      const profRole = localStorage.getItem("user_role");
+      if(!profName || profRole !== "Instructor"){
+        window.location.href = "login.html";
+        return false;
+      }
+      nameEl.textContent = profName;
+      const img = profImage && profImage !== "null" ? buildUrlFromPath(profImage) : `${api}/static/default.png`;
+      picEl.src = img;
+      return true;
+    }
+
+    async function loadCourses(){
+      if(!profId) { showResponse("Instructor id missing", true); return; }
+      try{
+        const res = await fetch(`${api}/instructor/${profId}/courses`);
+        if(!res.ok) throw new Error("Status " + res.status);
+        const data = await res.json();
+        let list = [];
+        if(Array.isArray(data)) list = data;
+        else if(data.courses && Array.isArray(data.courses)) list = data.courses;
+        else if(data.ok && data.courses) list = data.courses;
+        else list = [];
+
+        courseSelect.innerHTML = '<option value="">-- Choose a course --</option>';
+        list.forEach(c=>{
+          const id = c.id ?? c.course_id;
+          const name = c.course_name ?? c.courseName ?? `Course ${id}`;
+          if(typeof id === 'undefined') return;
+          const opt = document.createElement('option');
+          opt.value = id;
+          opt.textContent = name;
+          courseSelect.appendChild(opt);
+        });
+
+      }catch(err){
+        console.error(err);
+        showResponse("Error loading courses: " + (err.message || err), true);
+      }
+    }
+
+    // show/hide forms
+    actionSelect.addEventListener('change', ()=>{
+      [bookForm, assignmentForm, quizForm].forEach(f=>f.classList.add('hidden'));
+      responseBox.classList.add('hidden');
+      const v = actionSelect.value;
+      if(v === 'book' || v === 'lecture') bookForm.classList.remove('hidden');
+      if(v === 'assignment') assignmentForm.classList.remove('hidden');
+      if(v === 'quiz') quizForm.classList.remove('hidden');
+    });
+
+    // Book upload (send type)
+    document.getElementById('uploadBookBtn').addEventListener('click', async ()=>{
+      const courseId = courseSelect.value;
+      if(!courseId){ alert('Please select a course'); return; }
+      const fileInput = document.getElementById('bookFile');
+      if(!fileInput || !fileInput.files.length){ alert('Please choose a file'); return; }
+
+      let title = document.getElementById('bookTitle').value || 'Resource';
+      const action = actionSelect.value; // 'book' or 'lecture'
+      if(action === 'lecture' && !title.startsWith('Lecture - ')){
+        title = 'Lecture - ' + title;
+      }
+
+      const fd = new FormData();
+      fd.append('course_id', courseId);
+      fd.append('title', title);
+      fd.append('file', fileInput.files[0]);
+      fd.append('type', action);
+
+      try{
+        const r = await fetch(`${api}/upload_book`, { method: 'POST', body: fd });
+        const json = await r.json().catch(()=>({message:'No JSON'}));
+        if(!r.ok) {
+          showResponse('Upload failed: ' + (json.message||r.status), true);
+          return;
+        }
+        showResponse(json.message || 'Uploaded successfully');
+        fileInput.value = '';
+      }catch(err){
+        console.error(err);
+        showResponse('Upload error: ' + err.message, true);
+      }
+    });
+
+    // Create Assignment (single-step if file attached, else JSON)
+    document.getElementById('createAssignBtn').addEventListener('click', async ()=>{
+      const courseId = courseSelect.value;
+      if(!courseId){ alert('Please select a course'); return; }
+      const title = document.getElementById('assignTitle').value?.trim();
+      if(!title){ alert('Enter assignment title'); return; }
+
+      const fileInput = document.getElementById('assignFile');
+      const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+
+      try{
+        // If there's a file -> send multipart with formdata (single request)
+        if(hasFile){
+          const fd = new FormData();
+          fd.append('course_id', courseId);
+          fd.append('title', title);
+          fd.append('description', document.getElementById('assignDesc').value || '');
+          fd.append('type', 'Assignment');
+          fd.append('due_date', document.getElementById('assignDate').value || '');
+          fd.append('total_mark', document.getElementById('assignTotal').value || 0);
+          fd.append('file', fileInput.files[0]);
+
+          showResponse('Creating assignment and uploading file...');
+          const r = await fetch(`${api}/add_assignment`, { method: 'POST', body: fd });
+          const json = await r.json().catch(()=>null);
+          if(!r.ok){ showResponse('Create assignment failed: ' + (json?.message || r.status), true); return; }
+          const assignmentId = json?.assignment_id || json?.assignmentId || json?.id || null;
+          showResponse('Assignment created and file uploaded ✓ (id: ' + (assignmentId || '?') + ')');
+          fileInput.value = '';
+          return;
+        }
+
+        // else: no file -> send JSON (fast)
+        const payload = {
+          course_id: Number(courseId),
+          title: title,
+          description: document.getElementById('assignDesc').value || '',
+          type: 'Assignment',
+          due_date: document.getElementById('assignDate').value || null,
+          total_mark: Number(document.getElementById('assignTotal').value || 0)
+        };
+        showResponse('Creating assignment...');
+        const r2 = await fetch(`${api}/add_assignment`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const json2 = await r2.json().catch(()=>null);
+        if(!r2.ok){ showResponse('Create assignment failed: ' + (json2?.message || r2.status), true); return; }
+        const assignmentId = json2?.assignment_id || json2?.assignmentId || json2?.id || null;
+        showResponse('Assignment created ✓ (id: ' + (assignmentId || '?') + ')');
+      }catch(err){
+        console.error(err);
+        showResponse('Error: ' + err.message, true);
+      }
+    });
+
+    // Create Quiz -> uses add_assignment (type='Quiz')
+    document.getElementById('createQuizBtn').addEventListener('click', async ()=>{
+      const courseId = courseSelect.value;
+      if(!courseId){ alert('Please select a course'); return; }
+      const title = document.getElementById('quizTitle').value?.trim() || 'Untitled Quiz';
+      const payload = {
+        course_id: Number(courseId),
+        title: title,
+        description: 'Quiz created from UI',
+        type: 'Quiz',
+        due_date: (document.getElementById('quizDate').value || '').split('T')[0] || null,
+        total_mark: Number(document.getElementById('quizTotal').value || 0)
+      };
+      try{
+        const r = await fetch(`${api}/add_assignment`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const json = await r.json().catch(()=>null);
+        if(!r.ok){ showResponse('Create quiz failed: ' + (json?.message || r.status), true); return; }
+        const createdId = json?.quiz_id || json?.assignment_id || json?.assignmentId || json?.id || null;
+        showResponse('Quiz created ✓');
+        if(createdId){
+          setTimeout(()=> window.location.href = `Prof_quiz_editor.html?quiz_id=${createdId}`, 300);
+        }
+      }catch(err){
+        console.error(err);
+        showResponse('Error: ' + err.message, true);
+      }
+    });
+
+    // init
+    document.addEventListener('DOMContentLoaded', async ()=>{
+      if(!fillProfile()) return;
+      await loadCourses();
+    });
+
+    // helper: fill once more
+    fillProfile();
+    loadCourses();
+
+  })();
+  </script>
+
+</body>
+</html>

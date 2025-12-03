@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="Prof_courses.css">
+    <title>Enter Mid & Final Grades</title>
+</head>
+<body>
+    <div class="menu">
+    <ul>
+        <li class="profile">
+        <div class="img-box">
+            <img id="profilePic" src="" alt="profile">
+        </div>
+        <h2 id="ProfessorName"></h2>
+        </li>
+
+        <li><a href="Prof_DaskBoard.html"><i class="fas fa-home"></i><p>dashboard</p></a></li>
+        <li><a href="generate_qr.html"><i class="fas fa-qrcode"></i><p>Generate QR</p></a></li>
+        <li><a href="Prof_students.html"><i class="fas fa-user-group"></i><p>Students</p></a></li>
+        <li><a href="Prof_courses.html"><i class="fa fa-list-alt"></i><p>Courses</p></a></li>
+        <li><a href="prof_assigment.html"><i class="far fa-edit"></i><p>Assignments</p></a></li>
+        <li><a href="Prof_ads.html"><i class="fab fa-adversal"></i><p>ADS</p></a></li>
+        <li><a href="Prof_schedule.html"><i class="fas fa-table"></i><p>Tables</p></a></li>
+        <li><a href="prof_mid&final.html"><i class="Mid & Final"></i><p>Tables</p></a></li>
+
+        <li class="log-out"><a href="login.html"><i class="fas fa-sign-out-alt"></i><p>Log Out</p></a></li>
+    </ul>
+    </div>
+
+<!-- ============= CONTENT ============= -->
+    <div class="content">
+        <div class="title-info">
+        <p>Course Grades</p>
+        <i class="fas fa-graduation-cap"></i>
+        </div>
+
+        <div class="box card">
+
+        <!-- Select Course -->
+        <div style="margin-bottom:10px;">
+            <label>Select Course:</label>
+            <select id="courseSelect">
+            <option value="">-- Choose course --</option>
+            </select>
+        </div>
+
+        <div id="response" style="margin-top:8px;color:#b00020"></div>
+
+        <!-- Grades table appears here -->
+        <div id="gradesArea" style="margin-top:12px"></div>
+
+        </div>
+    </div>
+
+    <script>
+    (function(){
+    const api = "http://127.0.0.1:5000";
+
+    const profId = localStorage.getItem("user_id");
+    const profName = localStorage.getItem("user_name");
+    const profImage = localStorage.getItem("user_image");
+    const profRole = localStorage.getItem("user_role");
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if(!profName || profRole !== "Instructor"){
+        window.location.href = "login.html";
+        return;
+        }
+
+        document.getElementById("ProfessorName").textContent = profName;
+        const pic = document.getElementById("profilePic");
+        pic.src = profImage ? `${api}/${profImage}` : `${api}/uploads/default.png`;
+
+        loadCourses();
+
+        document.getElementById("courseSelect").addEventListener("change", loadGradesForCourse);
+    });
+
+    function showResponse(msg, isError=false){
+        const el = document.getElementById('response');
+        el.style.color = isError ? '#b00020' : '#154360';
+        el.textContent = msg;
+    }
+
+    // ====== Load courses for instructor =======
+    async function loadCourses(){
+        try{
+        const res = await fetch(`${api}/instructor/${profId}/courses`);
+        if(!res.ok){
+            showResponse("Failed to load courses", true);
+            return;
+        }
+        const data = await res.json();
+        let list = [];
+
+        if(Array.isArray(data)) list = data;
+        else if(data.courses) list = data.courses;
+        else if(data.data) list = data.data;
+
+        const sel = document.getElementById("courseSelect");
+        sel.innerHTML = `<option value="">-- Choose course --</option>`;
+
+        list.forEach(c=>{
+            const cid = c.id ?? c.course_id;
+            const cname = c.course_name ?? c.name ?? ("Course " + cid);
+
+            if(!cid) return;
+
+            const opt = document.createElement("option");
+            opt.value = cid;
+            opt.textContent = cname;
+            sel.appendChild(opt);
+        });
+
+        } catch(e){
+        console.error(e);
+        showResponse("Error loading courses: "+e.message, true);
+        }
+    }
+
+    // ===== Load grades for selected course =====
+    async function loadGradesForCourse(){
+        const courseId = Number(document.getElementById("courseSelect").value);
+        if(!courseId){
+        document.getElementById("gradesArea").innerHTML = "";
+        return;
+        }
+
+        showResponse("Loading...");
+        try{
+        const res = await fetch(`${api}/course/${courseId}/grades`);
+        const data = await res.json();
+
+        if(!res.ok || !data.ok){
+            showResponse("Error: " + (data.message || res.status), true);
+            return;
+        }
+
+        renderGradesTable(courseId, data.students || []);
+        showResponse("");
+
+        } catch(e){
+        console.error(e);
+        showResponse("Error: "+e.message, true);
+        }
+    }
+
+    // ===== Render grades table =====
+    function renderGradesTable(courseId, students){
+        const area = document.getElementById("gradesArea");
+        area.innerHTML = "";
+
+        if(students.length === 0){
+        area.innerHTML = "<p>No students found.</p>";
+        return;
+        }
+
+        // Create table
+        const table = document.createElement("table");
+        table.border = "1";
+        table.cellPadding = "6";
+        table.style.borderCollapse = "collapse";
+
+        const head = `<tr>
+        <th>#</th>
+        <th>Student</th>
+        <th>Midterm</th>
+        <th>Final</th>
+        <th>Save</th>
+        </tr>`;
+        table.innerHTML = head;
+
+        students.forEach((s, i) => {
+        const tr = document.createElement("tr");
+
+        const mid = s.mid_grade ?? "";
+        const fin = s.final_grade ?? "";
+
+        tr.innerHTML = `
+            <td>${i+1}</td>
+            <td>${s.name}</td>
+            <td><input type="number" id="mid-${s.student_id}" value="${mid}" style="width:80px;"></td>
+            <td><input type="number" id="fin-${s.student_id}" value="${fin}" style="width:80px;"></td>
+            <td><button data-sid="${s.student_id}">Save</button></td>
+        `;
+
+        tr.querySelector("button").addEventListener("click", ()=> saveGrade(courseId, s.student_id));
+        table.appendChild(tr);
+        });
+
+        area.appendChild(table);
+    }
+
+    // ===== Save grade to backend =====
+    async function saveGrade(courseId, studentId){
+        const mid = document.getElementById(`mid-${studentId}`).value;
+        const fin = document.getElementById(`fin-${studentId}`).value;
+
+        const payload = {
+        student_id: studentId,
+        mid_grade: mid === "" ? null : Number(mid),
+        final_grade: fin === "" ? null : Number(fin)
+        };
+
+        try{
+        const res = await fetch(`${api}/course/${courseId}/grades`, {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if(!res.ok || !data.ok){
+            alert("Save failed: " + (data.message || res.status));
+        } else {
+            alert("Grade saved");
+        }
+        } catch(e){
+        alert("Network error");
+        console.error(e);
+        }
+    }
+
+    })();
+    </script>
+    </body>
+</html>

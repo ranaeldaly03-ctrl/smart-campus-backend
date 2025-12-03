@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Scan QR for Attendance</title>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+
+<h2>Scan QR Code</h2>
+
+<div id="reader" style="width:300px"></div>
+
+<p id="result"></p>
+
+<script>
+const api = "http://127.0.0.1:5000";
+const studentId = localStorage.getItem("user_id"); // ← لازم الطالب يكون logged in
+
+function onScanSuccess(decodedText, decodedResult) {
+    document.getElementById("result").innerText = "QR Detected: " + decodedText;
+
+    // استخراج id الكورس من الرابط
+    const courseId = decodedText.split("/").pop();
+
+    // إرسال طلب الحضور
+    fetch(`${api}/mark_attendance/${courseId}`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ student_id: studentId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+    })
+    .catch(err => alert("Error: " + err));
+}
+
+let html5QrcodeScanner = new Html5QrcodeScanner(
+    "reader",
+    { fps: 10, qrbox: 250 },
+    false);
+
+html5QrcodeScanner.render(onScanSuccess);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profissor | DashBoard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="Prof_dashBoard.css">
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="ProfessorName"></h2>
+            </li>
+            <li>
+                <a class="active" href="Prof_DaskBoard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="generate_qr.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Generate QR</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_students.html">
+                    <i class="fas fa-user-group"></i>
+                    <p>Students</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+             <li><a href="prof_assigment.html"><i class="far fa-edit"></i><p>Assignments</p></a></li>
+            <li>
+                <a href="Prof_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- ====== Main content ====== -->
+    <div class="content">
+        <div class="title-info">
+            <p>Professor Dashboard</p>
+            <i class="fas fa-chalkboard-teacher"></i>
+        </div>
+
+        <!-- stats boxes -->
+        <div class="data-info">
+            <div class="box">
+                <i class="fas fa-book"></i>
+                <div class="data">
+                    <p>Your Courses</p>
+                    <span id="courseCount">0</span>
+                </div>
+            </div>
+
+            <div class="box">
+                <i class="fas fa-users"></i>
+                <div class="data">
+                    <p>Total Students (all courses)</p>
+                    <span id="totalStudents">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- courses list -->
+        <div class="title-info">
+            <p>Your Courses & Enrollment</p>
+            <i class="fas fa-list"></i>
+        </div>
+
+        <div class="data-info">
+            <table id="courseTable">
+                <thead>
+                    <tr>
+                        <th>Course Name</th>
+                        <th>Department</th>
+                        <th>Students Enrolled</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+    </div>
+
+
+    <script>
+        // professor_dashboard.js
+    const api = "http://127.0.0.1:5000";
+
+    // global vars (مأخوذة من localStorage)
+    const profId = localStorage.getItem("user_id");
+    const profName = localStorage.getItem("user_name");
+    const profRole = localStorage.getItem("user_role");
+    const profImage = localStorage.getItem("user_image");
+
+    // DOM ready
+    document.addEventListener("DOMContentLoaded", () => {
+    // تحقق أساسي من تسجيل الدخول والدور
+    if (!profName || profRole !== "Instructor") {
+        window.location.href = "login.html";
+        return;
+    }
+
+    // عرض اسم الدكتور
+    const nameEl = document.getElementById("ProfessorName");
+    if (nameEl) nameEl.textContent = profName;
+
+    // عرض صورة الملف الشخصي
+    const profilePic = document.getElementById("profilePic");
+    if (profilePic) {
+        // profImage قد يكون مسار نسبي مخزن في الـ DB أو رابط كامل
+        if (profImage && profImage !== "null" && profImage !== "") {
+        // لو ProfImage بدأ بـ http نستخدمه كما هو، وإلا نضيف base api
+        profilePic.src = profImage.startsWith("http") ? profImage : `${api}/${profImage}`;
+        } else {
+        profilePic.src = `${api}/uploads/admin.png`;
+        }
+    }
+
+    // ابدأ تحميل الكورسات بعد إعداد الصفحة
+    loadInstructorCourses();
+    });
+
+    // تحميل كورسات الدكتور + تعبئة الجدول + إحصاءات
+    async function loadInstructorCourses() {
+    try {
+        if (!profId) {
+        console.warn("profId not found in localStorage");
+        return;
+        }
+
+        const res = await fetch(`${api}/instructor/${profId}/courses`);
+        if (!res.ok) {
+        throw new Error(`Failed to load courses: ${res.status} ${res.statusText}`);
+        }
+
+        const courses = await res.json();
+
+        // عرض عدد الكورسات
+        const courseCountEl = document.getElementById("courseCount");
+        if (courseCountEl) courseCountEl.textContent = courses.length;
+
+        // حساب مجموع الطلاب المسجلين في كل الكورسات
+        const totalStudents = courses.reduce((acc, c) => acc + (parseInt(c.student_count, 10) || 0), 0);
+        const totalStudentsEl = document.getElementById("totalStudents");
+        if (totalStudentsEl) totalStudentsEl.textContent = totalStudents;
+
+        // تعبئة جدول الكورسات
+        const tbody = document.querySelector("#courseTable tbody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+
+        courses.forEach(c => {
+        const tr = document.createElement("tr");
+
+        // تأكد من وجود الحقول الأساسية
+        const courseName = c.course_name || "";
+        const dept = c.department || "";
+        const studentCount = c.student_count || 0;
+        const courseId = c.id || c.course_id || "";
+
+        tr.innerHTML = `
+            <td>${escapeHtml(courseName)}</td>
+            <td>${escapeHtml(dept)}</td>
+            <td>${escapeHtml(String(studentCount))}</td>
+            <td>
+            <button class="small-btn" onclick="openQR(${courseId})">QR</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+        });
+
+    } catch (err) {
+        console.error("Error loading instructor courses:", err);
+        // عرض رسالة للمستخدم لو فيه عنصر مخصص
+        const errEl = document.getElementById("coursesError");
+        if (errEl) errEl.textContent = "Failed to load courses. Check console for details.";
+    }
+    }
+
+    // فتح صفحة الـ QR للكورس المحدد (نحفظ المعرف في localStorage)
+    function openQR(courseId) {
+    if (!courseId) {
+        alert("Invalid course selected");
+        return;
+    }
+    localStorage.setItem("selected_course_id", courseId);
+    // انتِ ممكن تستخدمي query param بدل localStorage لو تحبي
+    window.location.href = "generate_qr.html";
+    }
+
+    // جلب وعرض طلاب الكورس — نفتح نافذة جديدة بالنتيجة (يمكن تغييره إلى modal)
+
+    // تسجيل خروج
+    function logout() {
+    localStorage.clear();
+    window.location.href = "login.html";
+    }
+
+    /* ---------------------------
+    Utility: escapeHtml to prevent XSS
+    --------------------------- */
+    function escapeHtml(unsafe) {
+    if (unsafe === null || unsafe === undefined) return "";
+    return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Export functions to global scope (so inline onclick handlers can call them)
+    window.openQR = openQR;
+    window.logout = logout;
+
+    </script>
+
+
+</body>
+</html>

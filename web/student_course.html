@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="student_course.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <title>add student to a course</title>
+</head>
+<body>
+
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="adminName"></h2>
+            </li>
+            <li>
+                <a class="active" href="admin.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="users.html">
+                    <i class="fas fa-user-group"></i>
+                    <p>Users</p>
+                </a>
+            </li>
+            <li>
+                <a href="courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="admin_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="enroll">
+        <form onsubmit="enrollStudent(event)">
+             <div class="title">
+                <i class="fas fa-add"></i>
+                <h1 class="add">ADD Student</h1>
+            </div>
+
+            <div class="courseId">
+                <label for="input">Course ID</label>
+                <input type="number" id="courseId">
+            </div>
+
+
+            <div class="studentId">
+                <label for="input">Student ID</label>
+                <input type="number" id="studentId" placeholder="Optional (auto-generated)">
+            </div>
+
+
+            
+            <button type="submit">Add</button>
+        </form>
+
+    </div>
+
+    <p class="msg" id="msg"></p>
+    <a href="courses.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Courses</a>
+
+
+
+    <script>
+        const api = "http://127.0.0.1:5000";
+
+        async function enrollStudent(event) {
+            event.preventDefault();
+
+            const courseId = document.getElementById('courseId').value.trim();
+            const studentId = document.getElementById('studentId').value.trim();
+            const msg = document.getElementById('msg');
+            
+            msg.textContent = "";
+            msg.style.color = "red";
+
+            if (!courseId || !studentId) {
+             msg.textContent = "⚠️ Please enter both Course ID and Student ID.";
+             return;
+            }
+
+            try {
+                const res = await fetch(`${api}/enroll_student`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ course_id: courseId, student_id: studentId })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                msg.style.color = "green";
+                msg.textContent = data.message;
+                
+                document.getElementById('courseId').value = "";
+                document.getElementById('studentId').value = "";
+
+            } else {
+                msg.textContent = data.message || "Error enrolling student.";
+            }
+        } catch (err) {
+            msg.textContent = "Connection error: " + err.message;
+        }
+                    
+        } 
+               
+           
+    </script>
+</body>
+</html>

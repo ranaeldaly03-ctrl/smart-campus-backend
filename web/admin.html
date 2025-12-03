@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="admin.css">
+    <title>Admin | dashboard</title>
+</head>
+<body>
+
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="adminName"></h2>
+            </li>
+            <li>
+                <a class="active" href="admin.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="users.html">
+                    <i class="fas fa-user-group"></i>
+                    <p>Users</p>
+                </a>
+            </li>
+            <li>
+                <a href="courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="admin_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="title-info">
+            <p>dashboard</p>
+            <i class="fas fa-chart-bar"></i>
+        </div>
+
+        <div class="data-info">
+        <div class="box">
+            <i class="fas fa-user"></i>
+            <div class="data">
+                <p>Users</p>
+                <span id="total-users">0</span>
+            </div>
+        </div>
+        
+        <div class="box">
+            <i class="fa fa-list-alt"></i>
+            <div class="data">
+                <p>Courses</p>
+                <span id="total_courses">0</span>
+            </div>
+        </div>
+        
+        </div>
+
+        <div class="title-info">
+
+            <p id="list-title">Users Statistics</p>
+            <i class="fas fa-chart-bar"></i>
+        </div>
+
+        
+
+        <table id="userTable">
+            <thead>
+                <tr>
+                    <th>Role</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        
+        
+
+
+    </div>
+
+    
+    <script>
+        const api = "http://127.0.0.1:5000";
+
+
+       
+        document.addEventListener("DOMContentLoaded", () => {
+            const name = localStorage.getItem("user_name");
+            const role = localStorage.getItem("user_role");
+            const image = localStorage.getItem("user_image");
+
+
+            if (!name || role !== "Admin") {
+                window.location.href = "login.html";
+                return;
+            }
+               
+            document.getElementById("adminName").textContent = name;
+                
+            const profilePic = document.getElementById("profilePic");
+            
+             if (image && image !== "null" && image !== ""){
+                    document.getElementById("profilePic").src = `${api}/${image}`;
+                } else {
+                    document.getElementById("profilePic").src = `${api}/uploads/admin.png`;
+                }
+
+            
+        });
+
+
+
+
+        async function loadStats() {
+            try{
+                const res = await fetch(`${api}/user_stats`);
+                const data = await res.json();
+
+                const cor = await fetch(`${api}/courses_stats`);
+                const total = await cor.json();
+
+                const number = total.courses;
+                document.getElementById("total_courses").textContent = number;
+
+                const totalUsers = (data.student || 0) + (data.Professors || 0) + (data.admin || 0);
+                document.getElementById("total-users").textContent = totalUsers;
+
+                const tbody = document.querySelector("#userTable tbody");
+                tbody.innerHTML ="";
+
+                
+
+                const roles = {
+                    student:"Students",
+                    Professors: "Instructor",
+                    admin: "Admins"
+                };
+
+                for (let role in data){
+                    const row = `
+                        <tr>
+                            <td>${roles[role] || role}</td>
+                            <td>${data[role]}</td>
+                        </tr>`;
+                    tbody.innerHTML += row;        
+                }
+                // document.getElementById("list-title").textContent = "Users Statistics";
+            }catch(err){
+                console.error("❌ error loading starts:", err);
+            }
+        }
+            function logout() 
+            {
+                localStorage.clear();
+                window.location.href = "login.html";
+            }
+                
+
+        window.onload = loadStats;
+    
+    </script>
+    
+</body>
+</html>

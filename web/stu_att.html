@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="stu_att.css">
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="studentName"></h2>
+            </li>
+            <li>
+                <a href="stu_dashboard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="stu_att.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Attendance</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_assigment.html">
+                    <i class="fas fa-check-double"></i>
+                    <p>Assignments</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_quiz.html">
+                    <i class="far fa-edit"></i>
+                    <p>Quizzes</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_deg.html">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Degree</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="title-info"><p>Mark Attendance</p><i class="fas fa-qrcode"></i></div>
+        <input id="sessionCode" placeholder="Enter session code or scan QR" style="margin-left:10px;padding:8px;border-radius:6px;border:1px solid #ccc;">
+        <div id="msg" style="color:#c00;margin-top:8px;"></div>
+
+        <div class="data-info">
+        <p>Choose course and press the button.</p>
+
+        <label for="courseSelect">Select Course</label>
+        <select id="courseSelect">
+            <option value="">-- Choose course --</option>
+        </select>
+
+        <button id="markBtn">Mark Attendance</button>
+
+        <p id="status" class="status"></p>
+
+        <div id="attBox" class="att-box" style="display:none;">
+            <h3>Present Students (<span id="presentCount">0</span>)</h3>
+            <table id="presentTable">
+            <thead><tr><th>ID</th><th>Name</th></tr></thead>
+            <tbody></tbody>
+            </table>
+        </div>
+        </div>
+    </div>
+
+    <script>
+    const api = "http://127.0.0.1:5000";
+
+    let studentId, studentName, studentRole, studentImage;
+
+    function $id(id){ return document.getElementById(id); }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+    studentId = localStorage.getItem("user_id");
+    studentName = localStorage.getItem("user_name");
+    studentRole = localStorage.getItem("user_role");
+    studentImage = localStorage.getItem("user_image");
+
+    // عرض اسم و صورة الطالب (لو العناصر موجودة)
+    if ($id("studentName")) $id("studentName").textContent = studentName || "Student";
+    if ($id("profilePic")) $id("profilePic").src = studentImage && studentImage !== "null" ? `${api}/${studentImage}` : `${api}/uploads/default.png`;
+
+    // تحقق صلاحية تسجيل دخول الطالب
+    if (!studentId || studentRole !== "Student") {
+        if ($id("msg")) $id("msg").textContent = "You are not logged in as a Student. Please login.";
+        return;
+    }
+
+    // جلب كورسات الطالب
+    await loadStudentCourses();
+
+    // قراءة الرابط لو فيه كود او course (مثلاً من QR)
+    const params = new URLSearchParams(window.location.search);
+    const codeFromQr = params.get('code') || params.get('session_code');
+    const courseFromQr = params.get('course');
+    if (codeFromQr && $id("sessionCode")) {
+        $id("sessionCode").value = codeFromQr;
+        // نضغط تلقائياً بعد تأخير بسيط
+        setTimeout(()=> $id("markBtn")?.click(), 700);
+    } else if (courseFromQr) {
+        if ($id("courseSelect")) $id("courseSelect").value = courseFromQr;
+    }
+    });
+
+    // load student's courses
+    async function loadStudentCourses(){
+    const sel = $id("courseSelect");
+    if (!sel) return;
+    try {
+        const res = await fetch(`${api}/student/${localStorage.getItem("user_id")}/courses`);
+        if (!res.ok) { console.warn("courses API", res.status); return; }
+        const json = await res.json();
+        const list = Array.isArray(json) ? json : (json.courses || json);
+        sel.innerHTML = '<option value="">-- Choose course --</option>';
+        if (!list || list.length === 0) { sel.innerHTML += '<option value="">(No courses)</option>'; return; }
+        list.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.id ?? c.course_id;
+        opt.textContent = c.course_name ?? c.name ?? `Course ${opt.value}`;
+        sel.appendChild(opt);
+        });
+    } catch (err) {
+        console.error("Error loading courses:", err);
+    }
+    }
+
+    // حدث الضغط على زر Mark
+    $id("markBtn")?.addEventListener("click", async () => {
+    const codeEl = $id("sessionCode");
+    const courseSel = $id("courseSelect");
+    const statusEl = $id("status");
+    const btn = $id("markBtn");
+
+    btn.disabled = true;
+    statusEl && (statusEl.textContent = "Processing...");
+
+    // إذا في كود املاه المستخدم أو جاي من QR -> استخدم endpoint mark_by_code
+    const code = codeEl ? codeEl.value.trim() : "";
+
+    try {
+        if (code) {
+        const res = await fetch(`${api}/mark_by_code`, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ student_id: studentId, session_code: code })
+        });
+        const data = await res.json().catch(()=>({message:"No JSON"}));
+        if (res.ok) {
+            statusEl && (statusEl.style.color = "green", statusEl.textContent = data.message || "Attendance marked");
+            btn.textContent = "Marked ✓";
+            btn.disabled = true;
+        } else {
+            statusEl && (statusEl.style.color = "red", statusEl.textContent = data.message || `Error ${res.status}`);
+            btn.disabled = false;
+        }
+        } else if (courseSel && courseSel.value) {
+        // لو مفيش كود لكن في course محددة، واستدعاء السيرفر يقبل /mark_attendance/{courseId}
+        const courseId = courseSel.value;
+        const res = await fetch(`${api}/mark_attendance/${courseId}`, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ student_id: studentId })
+        });
+        const data = await res.json().catch(()=>({message:"No JSON"}));
+        if (res.ok) {
+            statusEl && (statusEl.style.color = "green", statusEl.textContent = data.message || "Attendance marked by course");
+            btn.textContent = "Marked ✓";
+            btn.disabled = true;
+        } else {
+            statusEl && (statusEl.style.color = "red", statusEl.textContent = data.message || `Error ${res.status}`);
+            btn.disabled = false;
+        }
+        } else {
+        alert("Please either enter the session code or choose a course.");
+        btn.disabled = false;
+        statusEl && (statusEl.style.color = "red", statusEl.textContent = "No code or course provided.");
+        }
+    } catch (err) {
+        console.error("Mark attendance error:", err);
+        statusEl && (statusEl.style.color = "red", statusEl.textContent = "Network/server error");
+        btn.disabled = false;
+    }
+    });
+    </script>
+
+
+
+
+</body>
+</html>

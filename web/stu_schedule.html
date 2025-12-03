@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="stu_att.css">
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="studentName"></h2>
+            </li>
+            <li>
+                <a href="stu_dashboard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_att.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Attendance</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="stu_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_assigment.html">
+                    <i class="fas fa-check-double"></i>
+                    <p>Assignments</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_quiz.html">
+                    <i class="far fa-edit"></i>
+                    <p>Quizzes</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_deg.html">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Degree</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="title-info">
+            <p>Course Schedule</p>
+            <i class="fas fa-table"></i>
+        </div>
+
+        <div class="table-card">
+            <table id="scheduleTable">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Day</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Room</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+
+            <p id="noData" class="muted">Loading schedule...</p>
+        </div>
+    </div>
+
+    <script>
+    const api = "http://127.0.0.1:5000";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const studentId = localStorage.getItem("user_id");
+        const studentName = localStorage.getItem("user_name");
+        const studentRole = localStorage.getItem("user_role");
+        const studentImage = localStorage.getItem("user_image");
+
+        if (!studentName || studentRole !== "Student") {
+            window.location.href = "login.html";
+            return;
+        }
+
+        document.getElementById("studentName").textContent = studentName;
+        const profilePic = document.getElementById("profilePic");
+        profilePic.src = studentImage && studentImage !== "null" ? `${api}/${studentImage}` : `${api}/uploads/default.png`;
+
+        // جلب الـ course_id من الـ localStorage بعد ما الصفحة جاهزة
+        window.selectedCourseId = localStorage.getItem("selected_course_id");
+        loadSchedule();
+    });
+
+    async function loadSchedule(){
+        const selectedCourseId = window.selectedCourseId;
+        const tbody = document.querySelector("#scheduleTable tbody");
+        const noData = document.getElementById("noData");
+
+        if(!selectedCourseId){
+            noData.textContent = "No course selected.";
+            return;
+        }
+
+        try {
+            const res = await fetch(`${api}/schedule`);
+            if(!res.ok){
+                console.error("Schedule API error:", res.status, await res.text());
+                noData.textContent = "Error loading schedule from server.";
+                return;
+            }
+            const data = await res.json();
+
+            // لو السيرفر بيرجع course_id استخدمه، لو مش بيرجعه ممكن تستخدم course_name بدلًا منه
+            const rows = data.filter(item => {
+                // مرونة: إذا موجود course_id في السيرفر استخدمه، لو مش موجود حاول مقارنة بالاسم لو عندك اسم الدورة مخزن
+                if (item.course_id !== undefined && item.course_id !== null) {
+                    return String(item.course_id) === String(selectedCourseId);
+                }
+                // fallback: لو المخزن في localStorage اسم الكورس بدلاً من id
+                const selectedCourseName = localStorage.getItem("selected_course_name");
+                if (selectedCourseName && item.course_name) {
+                    return item.course_name === selectedCourseName;
+                }
+                return false;
+            });
+
+            tbody.innerHTML = "";
+
+            if(rows.length === 0){
+                noData.style.display = "block";
+                noData.textContent = "No schedule available.";
+                return;
+            }
+
+            noData.style.display = "none";
+
+            rows.forEach(item => {
+                // أمان: تأكد إن start_time && end_time موجودين قبل slice
+                const st = item.start_time ? String(item.start_time).slice(0,5) : "-";
+                const et = item.end_time ? String(item.end_time).slice(0,5) : "-";
+                const room = item.room || "-";
+                const day = item.day || "-";
+                const course = item.course_name || "-";
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${course}</td>
+                    <td>${day}</td>
+                    <td>${st}</td>
+                    <td>${et}</td>
+                    <td>${room}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+        } catch (err) {
+            console.error("Error loading schedule:", err);
+            noData.textContent = "Error loading schedule.";
+        }
+    }
+    </script>
+
+</body>
+</html>

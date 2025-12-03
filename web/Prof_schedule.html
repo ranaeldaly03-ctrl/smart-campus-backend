@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="Prof_schedule.css">
+</head>
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="ProfessorName"></h2>
+            </li>
+            <li>
+                <a href="Prof_DaskBoard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="generate_qr.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Generate QR</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_students.html">
+                    <i class="fas fa-user-group"></i>
+                    <p>Students</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+             <li><a href="prof_assigment.html"><i class="far fa-edit"></i><p>Assignments</p></a></li>
+            <li>
+                <a href="Prof_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="Prof_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="title-info">
+        <p>My Courses</p>
+        <i class="fas fa-chalkboard-teacher"></i>
+        </div>
+
+        <div class="data-info">
+        <div class="box">
+            <i class="fas fa-book"></i>
+            <div class="data">
+            <p>Courses</p>
+            <span id="total-courses">0</span>
+            </div>
+        </div>
+
+        <div class="box">
+            <i class="fas fa-user-graduate"></i>
+            <div class="data">
+            <p>Total Students</p>
+            <span id="total-students">0</span>
+            </div>
+        </div>
+        </div>
+
+        <div class="title-info small">
+        <p>Courses List</p>
+        </div>
+
+        <table id="coursesTable">
+        <thead>
+            <tr>
+            <th>Course</th>
+            <th>Department</th>
+            <th>Students</th>
+            <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+        </table>
+
+        <p id="msg" class="msg"></p>
+    </div>
+
+  <!-- Schedule Modal -->
+    <div id="scheduleModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-content">
+        <button id="closeSchedule" class="modal-close" aria-label="Close">×</button>
+        <h3 id="modalCourseTitle">Course Schedule</h3>
+
+        <table class="table" id="scheduleTable">
+            <thead>
+            <tr>
+                <th>Day</th><th>Start</th><th>End</th><th>Room</th>
+            </tr>
+            </thead>
+            <tbody id="scheduleTbody"></tbody>
+        </table>
+        </div>
+    </div>
+
+  <!-- Students Modal -->
+    <div id="studentsModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-content">
+        <button id="closeStudents" class="modal-close" aria-label="Close">×</button>
+        <h3 id="modalStudentsTitle">Students</h3>
+
+        <p><strong>Attended:</strong> <span id="attCount">0</span> &nbsp; <strong>Absent:</strong> <span id="absCount">0</span></p>
+
+        <table class="table" id="studentsTable">
+            <thead>
+            <tr><th>ID</th><th>Name</th><th>Level</th></tr>
+            </thead>
+            <tbody id="studentsTbody"></tbody>
+        </table>
+        </div>
+    </div>
+ 
+
+    <script>
+        const api = "http://127.0.0.1:5000";
+
+        // global prof data
+        const profId = localStorage.getItem("user_id");
+        const profName = localStorage.getItem("user_name");
+        const profRole = localStorage.getItem("user_role");
+        const profImage = localStorage.getItem("user_image");
+
+        // safety: elements
+        const coursesTbody = document.querySelector("#coursesTable tbody");
+        const totalCoursesEl = document.getElementById("total-courses");
+        const totalStudentsEl = document.getElementById("total-students");
+        const msgEl = document.getElementById("msg");
+
+        const scheduleModal = document.getElementById("scheduleModal");
+        const scheduleTbody = document.getElementById("scheduleTbody");
+        const modalCourseTitle = document.getElementById("modalCourseTitle");
+        const closeScheduleBtn = document.getElementById("closeSchedule");
+
+        const studentsModal = document.getElementById("studentsModal");
+        const studentsTbody = document.getElementById("studentsTbody");
+        const modalStudentsTitle = document.getElementById("modalStudentsTitle");
+        const attCountEl = document.getElementById("attCount");
+        const absCountEl = document.getElementById("absCount");
+        const closeStudentsBtn = document.getElementById("closeStudents");
+
+        // guard: must be instructor
+        function checkAuth() {
+        if (!profName || profRole !== "Instructor") {
+            window.location.href = "login.html";
+            return false;
+        }
+        document.getElementById("ProfessorName").textContent = profName;
+        const pic = document.getElementById("profilePic");
+        if (pic) pic.src = profImage && profImage !== "null" ? `${api}/${profImage}` : `${api}/uploads/default.png`;
+        return true;
+        }
+
+        // load courses
+        async function loadMyCourses(){
+        if (!checkAuth()) return;
+        msgEl.textContent = "";
+        try{
+            const res = await fetch(`${api}/instructor/${profId}/courses`);
+            if (!res.ok) throw new Error("Failed to load courses (status " + res.status + ")");
+            const courses = await res.json(); // expect array or object containing array
+            const list = Array.isArray(courses) ? courses : (courses.courses || courses.data || []);
+            coursesTbody.innerHTML = "";
+            let totalCourses = 0, totalStudents = 0;
+            if (Array.isArray(list) && list.length) {
+            totalCourses = list.length;
+            for (const c of list) {
+                const scount = c.student_count ?? c.studentCount ?? 0;
+                totalStudents += Number(scount);
+                const tr = document.createElement("tr");
+                tr.setAttribute("data-course-id", c.id);
+                tr.setAttribute("data-course-name", c.course_name || "");
+                tr.innerHTML = `
+                <td>${escapeHtml(c.course_name || "")}</td>
+                <td>${escapeHtml(c.department || "")}</td>
+                <td>${scount}</td>
+                <td class="actions">
+                    <button class="btn" data-action="schedule" data-id="${c.id}" data-name="${escapeAttr(c.course_name||'')}">View Schedule</button>
+                    </td>
+                `;
+                coursesTbody.appendChild(tr);
+            }
+            } else {
+            coursesTbody.innerHTML = `<tr><td colspan="4">No courses found</td></tr>`;
+            }
+            totalCoursesEl.textContent = totalCourses;
+            totalStudentsEl.textContent = totalStudents;
+        } catch(err){
+            console.error("loadMyCourses error:", err);
+            msgEl.textContent = "Error loading courses: " + err.message;
+        }
+        }
+
+        // delegated click for action buttons
+        document.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-action]");
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const courseId = btn.dataset.id;
+        const courseName = btn.dataset.name || "";
+        if (action === "schedule") onViewSchedule(courseId, courseName);
+        if (action === "students") onViewStudents(courseId, courseName);
+        });
+
+        // View schedule
+        async function onViewSchedule(courseId, courseName){
+        try{
+            modalCourseTitle.textContent = `Schedule — ${courseName || courseId}`;
+            scheduleTbody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
+            showModal(scheduleModal);
+            const res = await fetch(`${api}/course/${courseId}/schedule`);
+            if (!res.ok) throw new Error("Failed to load schedule (status " + res.status + ")");
+            const json = await res.json();
+            const rows = Array.isArray(json) ? json : (json.schedule || json.data || []);
+            if (!Array.isArray(rows) || rows.length === 0) {
+            scheduleTbody.innerHTML = `<tr><td colspan="4">No schedule available</td></tr>`;
+            return;
+            }
+            scheduleTbody.innerHTML = "";
+            rows.forEach(r => {
+            const start = r.start_time ? String(r.start_time).slice(0,5) : (r.start_time || "");
+            const end = r.end_time ? String(r.end_time).slice(0,5) : (r.end_time || "");
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${escapeHtml(r.day || "")}</td><td>${escapeHtml(start)}</td><td>${escapeHtml(end)}</td><td>${escapeHtml(r.room || "")}</td>`;
+            scheduleTbody.appendChild(tr);
+            });
+        } catch(err){
+            console.error("onViewSchedule error:", err);
+            scheduleTbody.innerHTML = `<tr><td colspan="4">Error: ${escapeHtml(err.message)}</td></tr>`;
+        }
+        }
+
+        // View students & attendance
+        async function onViewStudents(courseId, courseName){
+        try{
+            modalStudentsTitle.textContent = `Students — ${courseName || courseId}`;
+            studentsTbody.innerHTML = `<tr><td colspan="3">Loading...</td></tr>`;
+            attCountEl.textContent = 0; absCountEl.textContent = 0;
+            showModal(studentsModal);
+            const res = await fetch(`${api}/courses/${courseId}/students`);
+            if (!res.ok) throw new Error("Failed to load students (status " + res.status + ")");
+            const json = await res.json();
+            const students = Array.isArray(json) ? json : (json.students || json.data || []);
+            if (!Array.isArray(students) || students.length === 0) {
+            studentsTbody.innerHTML = `<tr><td colspan="3">No students found</td></tr>`;
+            return;
+            }
+            let present = 0, absent = 0;
+            studentsTbody.innerHTML = "";
+            for (const s of students) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${escapeHtml(s.id)}</td><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.level ?? "")}</td>`;
+            studentsTbody.appendChild(tr);
+            if (typeof s.present_count !== "undefined") present += Number(s.present_count || 0);
+            if (typeof s.absent_count !== "undefined") absent += Number(s.absent_count || 0);
+            }
+            // fallback counts
+            attCountEl.textContent = present || students.length;
+            absCountEl.textContent = absent || 0;
+        } catch(err){
+            console.error("onViewStudents error:", err);
+            studentsTbody.innerHTML = `<tr><td colspan="3">Error: ${escapeHtml(err.message)}</td></tr>`;
+        }
+        }
+
+        // modal helpers
+        function showModal(mod) {
+        if (!mod) return;
+        mod.classList.remove("hidden");
+        mod.setAttribute("aria-hidden", "false");
+        // focus first button inside
+        const btn = mod.querySelector("button.modal-close");
+        if (btn) btn.focus();
+        }
+        function hideModal(mod) {
+        if (!mod) return;
+        mod.classList.add("hidden");
+        mod.setAttribute("aria-hidden", "true");
+        }
+
+        closeScheduleBtn?.addEventListener("click", ()=> hideModal(scheduleModal));
+        closeStudentsBtn?.addEventListener("click", ()=> hideModal(studentsModal));
+
+        // click on overlay to close
+        [scheduleModal, studentsModal].forEach(mod => {
+        mod?.addEventListener("click", (e) => {
+            if (e.target === mod) hideModal(mod);
+        });
+        });
+
+        // close with Escape
+        document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            hideModal(scheduleModal);
+            hideModal(studentsModal);
+        }
+        });
+
+        // escape helpers
+        function escapeHtml(s){
+        if (s === undefined || s === null) return "";
+        return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
+        }
+        function escapeAttr(s){
+        return (s === undefined || s === null) ? "" : String(s).replace(/"/g, '&quot;').replace(/'/g,'&#39;');
+        }
+
+        function logout(){
+        localStorage.clear();
+        window.location.href = "login.html";
+        }
+
+        // init
+        document.addEventListener("DOMContentLoaded", loadMyCourses);
+    </script>
+</body>
+</html>

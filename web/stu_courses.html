@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="stu_courses.css">
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="studentName"></h2>
+            </li>
+            <li>
+                <a href="stu_dashboard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_att.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Attendance</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="stu_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_assigment.html">
+                    <i class="fas fa-check-double"></i>
+                    <p>Assignments</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_quiz.html">
+                    <i class="far fa-edit"></i>
+                    <p>Quizzes</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_deg.html">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Degree</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+
+    <div class="content">
+
+        <div class="title-info">
+            <p>My Courses</p>
+            <i class="fas fa-book"></i>
+        </div>
+
+        <div id="coursesContainer"></div>
+        <p id="pageMsg"></p>
+    </div>
+
+
+    <script>
+
+        const api = "http://127.0.0.1:5000";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const studentId = localStorage.getItem("user_id");
+            const studentName = localStorage.getItem("user_name");
+            const studentRole = localStorage.getItem("user_role");
+            const studentImage = localStorage.getItem("user_image");
+
+            if (!studentName || studentRole !== "Student") {
+                window.location.href = "login.html";
+                return;
+            }
+
+            document.getElementById("studentName").textContent = studentName;
+            const profilePic = document.getElementById("profilePic");
+            profilePic.src = studentImage && studentImage !== "null" ? `${api}/${studentImage}` : `${api}/uploads/default.png`;
+
+            // جلب الـ course_id من الـ localStorage بعد ما الصفحة جاهزة
+            window.selectedCourseId = localStorage.getItem("selected_course_id");
+            loadSchedule();
+        });
+    window.addEventListener('DOMContentLoaded', () => {
+        
+
+        const coursesContainer = document.getElementById("coursesContainer");
+        const pageMsg = document.getElementById("pageMsg");
+
+        function esc(s){
+            return s == null ? "" : String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
+        }
+
+        async function loadCourses(){
+            const sid = localStorage.getItem("user_id");
+            if (!sid){
+                coursesContainer.innerHTML = "<p>Please enter Student ID</p>";
+                return;
+            }
+
+            coursesContainer.innerHTML = "Loading...";
+
+            try{
+                const res = await fetch(`${api}/student/${sid}/courses`);
+                if(!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+
+                const arr = Array.isArray(data) ? data : (data.courses || []);
+                if(arr.length === 0){
+                    coursesContainer.innerHTML = "<p>No courses found.</p>";
+                    return;
+                }
+
+                coursesContainer.innerHTML = "";
+
+                arr.forEach(c => {
+                    const cid = c.id || c.course_id;
+                    const name = c.course_name || c.title;
+
+                    const card = document.createElement("div");
+                    card.className = "course-card";
+
+                    card.innerHTML = `
+                        <div>
+                            <div>${esc(name)}</div>
+                            <div>${esc(c.department || "")}</div>
+                        </div>
+                        <button class="btn-view-resources" data-id="${cid}" data-name="${esc(name)}">
+                            View Resources
+                        </button>
+                    `;
+
+                    coursesContainer.appendChild(card);
+                });
+
+                document.querySelectorAll(".btn-view-resources").forEach(btn => {
+                    btn.onclick = () => {
+                        const id = btn.dataset.id;
+                        const nm = btn.dataset.name;
+                        window.location.href =
+                            `stu_resources.html?course_id=${id}&course_name=${encodeURIComponent(nm)}`;
+                    };
+                });
+
+            }catch(err){
+                coursesContainer.innerHTML = `<p>Error: ${err.message}</p>`;
+            }
+        }
+
+        loadCourses();
+    });
+    </script>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,170 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f3f6fa;
+  color: #1c2e46;
+  min-height: 100vh;
+}
+
+/* ===============================
+      SIDEBAR (نفس الهيكل + الألوان الجديدة)
+================================*/
+.menu {
+  width: 80px;
+  height: 100vh;
+  background-color: #bfd0e9; /* اللون الأزرق الفاتح */
+  color: #1c2e46;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding-top: 10px;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.08);
+  overflow: hidden;
+  transition: width 0.45s ease;
+  z-index: 10;
+}
+
+.menu:hover {
+  width: 260px;
+}
+
+/* list */
+.menu ul {
+  list-style: none;
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.menu ul li {
+  padding: 12px 8px;
+  border-bottom: 1px solid #d5e0ec;
+  position: relative;
+}
+
+/* profile block */
+.profile {
+  text-align: center;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+}
+
+.profile .img-box img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid #4c6b9f;
+  object-fit: cover;
+  display: inline-block;
+  transition: transform .3s;
+}
+
+.menu:hover .profile .img-box img {
+  width: 80px;
+  height: 80px;
+}
+
+/* links */
+.menu ul li a {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px;
+  margin: 4px 6px;
+  border-radius: 8px;
+  transition: background-color .25s, color .25s, transform .25s;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* icon only state: hide text when collapsed */
+.menu ul li a i {
+  min-width: 28px;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* label paragraph inside link */
+.menu ul li a p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity .3s, transform .3s;
+}
+
+/* show labels on hover */
+.menu:hover ul li a p {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* active & hover styles */
+.menu ul li a.active,
+.menu ul li a:hover {
+  background-color: #e6eefb;
+  color: #2b4d75;
+  box-shadow: 0 2px 6px rgba(43,77,117,0.06);
+}
+
+/* special log-out at bottom */
+.log-out{
+  margin-top: auto;
+  padding-bottom: 18px;
+}
+
+.log-out a{
+  background-color:#a7b8d1;
+  border-radius: 8px;
+}
+
+
+
+.content{margin-left:280px;padding:28px}
+.title-info{display:flex;justify-content:space-between;align-items:center;background:#bfd0e9;padding:12px 18px;border-radius:10px;color:#1c2e46;box-shadow:0 3px 8px rgba(0,0,0,0.06);margin-bottom:16px}
+.title-info.small{margin-top:18px;font-size:16px;padding:8px 12px}
+.data-info{display:flex;gap:18px;margin-bottom:14px}
+.box{background:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 6px 14px rgba(0,0,0,0.04);display:flex;align-items:center;gap:12px}
+.box i{font-size:22px;color:#4c6b9f}
+.box .data p{font-weight:600;color:#2a3b52}
+.box .data span{display:block;font-size:18px;font-weight:700;margin-top:6px}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.04)}
+thead{background:#bfd0e9;color:#1c2e46}
+thead th{padding:12px;text-align:left}
+tbody td{padding:10px;border-bottom:1px solid #eef3fa}
+.actions .btn{margin-right:6px;padding:6px 10px;border-radius:8px;border:0;background:#4c6b9f;color:#fff;cursor:pointer}
+.actions .btn.outline{background:transparent;color:#4c6b9f;border:1px solid #4c6b9f}
+
+/* MESSAGE */
+.msg{margin-top:10px;color:#c0392b}
+
+/* MODAL */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(12,20,30,0.45);z-index:9999;padding:20px}
+.modal.hidden{display:none}
+.modal-content{background:#fff;width:100%;max-width:760px;border-radius:10px;padding:16px;position:relative;box-shadow:0 10px 30px rgba(0,0,0,0.12)}
+.modal-close{position:absolute;right:10px;top:8px;border:0;background:transparent;font-size:22px;cursor:pointer;color:#333}
+.table{width:100%;border-collapse:collapse;margin-top:8px}
+.table th,.table td{padding:10px;border-bottom:1px solid #eef3fa}
+.table thead{background:#e6eefb;color:#1c2e46}
+
+
+/* responsive */
+@media (max-width: 800px) {
+  .menu:hover { width: 220px; }
+  .menu { width: 70px; }
+  .content { margin-left: 90px; padding: 18px; }
+  .data-info { gap: 12px; }
+  .box { min-width: 160px; padding: 12px; }
+}

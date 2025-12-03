@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="stu_courses.css">
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="studentName"></h2>
+            </li>
+            <li>
+                <a href="stu_dashboard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_att.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Attendance</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="stu_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_assigment.html">
+                    <i class="fas fa-check-double"></i>
+                    <p>Assignments</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_quiz.html">
+                    <i class="far fa-edit"></i>
+                    <p>Quizzes</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_deg.html">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Degree</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+
+        <div class="title-info">
+            <p id="courseTitle">Resources</p>
+            <i class="fas fa-book"></i>
+        </div>
+
+        <div class="course-card">
+            <h3>Books / Files</h3>
+            <ul id="booksList"></ul>
+        </div>
+
+        <div class="course-card">
+            <h3>Lectures / Videos</h3>
+            <ul id="lecturesList"></ul>
+        </div>
+
+        <p id="debug"></p>
+    </div>
+
+
+    <script>
+    window.addEventListener("DOMContentLoaded", () => {
+        const api = "http://127.0.0.1:5000";
+
+        // عناصر DOM
+        const profilePic = document.getElementById("profilePic");
+        const studentNameEl = document.getElementById("studentName");
+        const booksList = document.getElementById("booksList");
+        const lecturesList = document.getElementById("lecturesList");
+        const courseTitleEl = document.getElementById("courseTitle");
+
+        // جلب بيانات المستخدم من localStorage
+        let studentId = localStorage.getItem("user_id");
+        const studentName = localStorage.getItem("user_name");
+        const studentRole = localStorage.getItem("user_role");
+        const studentImage = localStorage.getItem("user_image");
+
+        // لو مش مـسجّل أو مش طالب نعيد التوجيه
+        if (!studentName || studentRole !== "Student") {
+            window.location.href = "login.html";
+            return;
+        }
+
+        // عرض الاسم
+        if (studentNameEl) studentNameEl.textContent = studentName;
+
+        // --- دالة مساعدة لبناء رابط الصورة بطريقة مرنة ---
+        function buildImageUrl(img) {
+            if (!img || img === "null") return null;
+
+            const s = String(img).trim();
+
+            // لو رابط كامل
+            if (s.startsWith("http://") || s.startsWith("https://")) return s;
+
+            // لو بدأ بـ /uploads أو uploads/
+            if (s.startsWith("/uploads/")) return `${api}${s}`;
+            if (s.startsWith("uploads/"))  return `${api}/${s}`;
+
+            // لو بدأ بـ /static/ أو static/
+            if (s.startsWith("/static/")) return `${api}${s}`;
+            if (s.startsWith("static/"))  return `${api}/${s}`;
+
+            // لو مجرد اسم ملف
+            return `${api}/uploads/${s}`;
+        }
+
+        // حط صورة البروفايل (أو صورة افتراضية)
+        const imgUrl = buildImageUrl(studentImage) || `${api}/uploads/default.png`;
+        if (profilePic) profilePic.src = imgUrl;
+
+        // ===== الموارد (Books & Lectures) =====
+        // نحصل على course_id من URL أو localStorage
+        const params = new URLSearchParams(location.search);
+        const courseId = params.get("course_id") || localStorage.getItem("selected_course_id");
+
+        if (!courseId) {
+            if (booksList) booksList.innerHTML = "<li>No course selected.</li>";
+            if (lecturesList) lecturesList.innerHTML = "";
+            return;
+        }
+
+        if (courseTitleEl) courseTitleEl.textContent = `Resources — Course ${courseId}`;
+
+        function esc(s) {
+            return String(s || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
+        }
+
+        function buildFileUrl(r) {
+            if (!r) return null;
+            if (r.file_url) return r.file_url;
+            if (r.file_path) {
+                let p = String(r.file_path).replace(/^\/+/, '');
+                if (p.startsWith('uploads/')) p = p.replace('uploads/', '');
+                return `${api}/uploads/${p}`;
+            }
+            // fallback: if filename field exists
+            if (r.filename) return `${api}/uploads/${String(r.filename).replace(/^\/+/, '')}`;
+            return null;
+        }
+
+        async function loadResources() {
+            if (booksList) booksList.innerHTML = "<li>Loading...</li>";
+            if (lecturesList) lecturesList.innerHTML = "<li>Loading...</li>";
+
+            try {
+                const res = await fetch(`${api}/course/${encodeURIComponent(courseId)}/books_and_files`);
+                if (!res.ok) {
+                    const txt = await res.text().catch(()=>"");
+                    if (booksList) booksList.innerHTML = `<li>Server error ${res.status}: ${esc(txt)}</li>`;
+                    if (lecturesList) lecturesList.innerHTML = "";
+                    return;
+                }
+
+                const json = await res.json();
+                const arr = json.resources || [];
+
+                if (!arr.length) {
+                    if (booksList) booksList.innerHTML = "<li>No books uploaded.</li>";
+                    if (lecturesList) lecturesList.innerHTML = "<li>No lectures uploaded.</li>";
+                    return;
+                }
+
+                const books = [];
+                const lectures = [];
+
+                arr.forEach(r => {
+                    const name = (r.title || r.file_path || "").toString().toLowerCase();
+                    const isVideo = name.endsWith(".mp4") || name.endsWith(".webm") || (r.type||"").toString().toLowerCase().includes("video");
+                    if (isVideo) lectures.push(r); else books.push(r);
+                });
+
+                // render books
+                if (booksList) {
+                    booksList.innerHTML = "";
+                    books.forEach(r => {
+                        const url = buildFileUrl(r);
+                        const title = esc(r.title || r.file_path || "Book");
+                        const li = document.createElement("li");
+                        li.innerHTML = `<strong>${title}</strong>`;
+                        if (url) {
+                            const a = document.createElement("a");
+                            a.href = url; a.target = "_blank"; a.rel = "noopener";
+                            a.textContent = " Open";
+                            a.style.marginLeft = "10px";
+                            li.appendChild(a);
+                        } else {
+                            const span = document.createElement("span");
+                            span.textContent = " No file/link";
+                            span.style.color = "#888";
+                            span.style.marginLeft = "10px";
+                            li.appendChild(span);
+                        }
+                        booksList.appendChild(li);
+                    });
+                }
+
+                // render lectures
+                if (lecturesList) {
+                    lecturesList.innerHTML = "";
+                    lectures.forEach(r => {
+                        const url = buildFileUrl(r);
+                        const title = esc(r.title || r.file_path || "Lecture");
+                        const li = document.createElement("li");
+                        li.innerHTML = `<strong>${title}</strong>`;
+                        if (url) {
+                            if (url.endsWith(".mp4") || url.endsWith(".webm")) {
+                                const video = document.createElement("video");
+                                video.controls = true;
+                                video.style.maxWidth = "100%";
+                                video.style.display = "block";
+                                video.style.marginTop = "6px";
+                                const src = document.createElement("source");
+                                src.src = url;
+                                video.appendChild(src);
+                                li.appendChild(video);
+                            } else {
+                                const a = document.createElement("a");
+                                a.href = url; a.target = "_blank"; a.rel = "noopener";
+                                a.textContent = " Open";
+                                a.style.marginLeft = "10px";
+                                li.appendChild(a);
+                            }
+                        } else {
+                            const span = document.createElement("span");
+                            span.textContent = " No file/link";
+                            span.style.color = "#888";
+                            span.style.marginLeft = "10px";
+                            li.appendChild(span);
+                        }
+                        lecturesList.appendChild(li);
+                    });
+                }
+
+            } catch (err) {
+                if (booksList) booksList.innerHTML = `<li>Error: ${esc(err && err.message)}</li>`;
+                if (lecturesList) lecturesList.innerHTML = "";
+                console.error('loadResources error', err);
+            }
+        }
+
+        loadResources();
+    });
+    </script>
+
+
+
+
+</body>
+</html>

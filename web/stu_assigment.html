@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignments</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="stu_assigment.css">
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="studentName"></h2>
+            </li>
+            <li>
+                <a href="stu_dashboard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_att.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Attendance</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="stu_assigment.html">
+                    <i class="fas fa-check-double"></i>
+                    <p>Assignments</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_quiz.html">
+                    <i class="far fa-edit"></i>
+                    <p>Quizzes</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_deg.html">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Degree</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+
+        <div class="title-info">
+            <p>My Assignments</p>
+            <i class="fas fa-file-alt"></i>
+        </div>
+
+        <div id="assignContainer" class="assign-wrapper">
+            <!-- JS will insert assignment cards here -->
+        </div>
+
+
+    </div>
+
+    <script>
+    const api = "http://127.0.0.1:5000";
+
+    let studentId, studentName, studentRole, studentImage;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        studentId = localStorage.getItem("user_id");
+        studentName = localStorage.getItem("user_name");
+        studentRole = localStorage.getItem("user_role");
+        studentImage = localStorage.getItem("user_image");
+
+        if (studentId) {
+            const parsed = parseInt(studentId, 10);
+            if (!isNaN(parsed)) studentId = parsed;
+        }
+
+        if (!studentName || studentRole !== "Student") {
+            window.location.href = "login.html";
+            return;
+        }
+
+        document.getElementById("studentName").textContent = studentName;
+        const profilePic = document.getElementById("profilePic");
+        profilePic.src = studentImage && studentImage !== "null" ? `${api}/${studentImage}` : `${api}/uploads/default.png`;
+
+        loadAssignments();
+    });
+
+    // ---------- helpers ----------
+    function buildUrlFromPath(p){
+        if(!p) return null;
+        if(typeof p !== 'string') return null;
+        let s = p.trim();
+        if(!s) return null;
+        if(s.startsWith('http://') || s.startsWith('https://')) return s;
+        s = s.replace(/^\/+/, '');
+        if(s.startsWith('uploads/') || s.startsWith('static/')) return `${api}/${s}`;
+        // fallback: assume filename under static/uploads
+        return `${api}/static/uploads/${s}`;
+    }
+
+    function escapeHtml(s){
+        if (s === null || s === undefined) return "";
+        return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // ---------- load assignments ----------
+    async function loadAssignments() {
+        try {
+            if (!studentId) {
+                document.getElementById("assignContainer").innerHTML = "<p>No student ID — please login.</p>";
+                console.warn("studentId missing");
+                return;
+            }
+
+            const res = await fetch(`${api}/student/${studentId}/assignments`);
+            if (!res.ok) {
+                console.error('Failed to fetch assignments', res.status);
+                document.getElementById("assignContainer").innerHTML = "<p>Error loading assignments.</p>";
+                return;
+            }
+            const data = await res.json();
+
+            let assignments = [];
+            if (Array.isArray(data)) assignments = data;
+            else if (data && Array.isArray(data.assignments)) assignments = data.assignments;
+            else if (data && Array.isArray(data.data)) assignments = data.data;
+            else assignments = [];
+
+            const container = document.getElementById("assignContainer");
+            container.innerHTML = "";
+
+            if (!Array.isArray(assignments) || assignments.length === 0) {
+                container.innerHTML = "<p>No assignments found.</p>";
+                return;
+            }
+
+            assignments.forEach(a => {
+                const aid = a.id;
+                let dueText = "-";
+                let expired = false;
+                if (a.due_date) {
+                    const d = new Date(a.due_date);
+                    if (!isNaN(d)) {
+                        dueText = d.toLocaleDateString();
+                        expired = d < new Date();
+                    }
+                }
+
+                // Determine instructor-provided file URL (many possible field names)
+                let assignmentFileUrl = null;
+                if (a.file_url) assignmentFileUrl = a.file_url;
+                else if (a.fileUrl) assignmentFileUrl = a.fileUrl;
+                else if (a.file_path) assignmentFileUrl = buildUrlFromPath(a.file_path);
+                else if (a.filePath) assignmentFileUrl = buildUrlFromPath(a.filePath);
+                else if (a.file) assignmentFileUrl = buildUrlFromPath(a.file);
+                else if (a.attachment) assignmentFileUrl = buildUrlFromPath(a.attachment);
+
+                const card = document.createElement("div");
+                card.className = `card ${expired ? 'expired' : ''}`;
+                card.innerHTML = `
+                    <h3>${escapeHtml(a.title || a.name || 'Untitled')}</h3>
+                    <p><strong>Course:</strong> ${escapeHtml(a.course_name || '')}</p>
+                    <p><strong>Due Date:</strong> ${dueText}</p>
+                    <p><strong>Total Marks:</strong> ${escapeHtml(a.total_mark ?? '')}</p>
+
+                    ${ assignmentFileUrl ? `<p><strong>Attachment:</strong> <a href="${assignmentFileUrl}" target="_blank" rel="noopener noreferrer" class="assignment-file-link">Open File</a></p>` : '' }
+
+                    <div class="submission-area" id="submission-area-${aid}">
+                        <label class="upload-label">Upload File:</label>
+                        <input type="file" class="upload" id="file-${aid}" data-assignment="${aid}" accept=".pdf,.docx,.pptx,.zip,.jpg,.jpeg,.png,.mp4" />
+
+                        <button class="submit-btn" id="submit-${aid}" data-assignment="${aid}">Submit</button>
+
+                        <span class="status" id="status-${aid}"></span>
+
+                        <div class="controls" id="controls-${aid}" style="display:none; margin-top:8px;">
+                            <a href="#" id="view-${aid}" target="_blank" style="margin-right:8px; display:none;">Open File</a>
+                            <button id="edit-${aid}" style="margin-right:6px; display:none;">Edit (unlock)</button>
+                            <button id="delete-${aid}" style="display:none;">Delete</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+
+                // check student's existing submission and update UI
+                checkSubmissionForAssignment(aid).then(sub => {
+                    if (sub) {
+                        applyLockedUI(aid, sub);
+                    }
+                }).catch(err => {
+                    console.warn("checkSubmissionForAssignment error:", err);
+                });
+
+                // bind submit
+                const submitBtn = document.getElementById(`submit-${aid}`);
+                submitBtn.addEventListener('click', async (e) => {
+                    const fileInput = document.getElementById(`file-${aid}`);
+                    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                        alert("Please select a file to upload.");
+                        return;
+                    }
+                    const file = fileInput.files[0];
+                    await submitAssignment(aid, file);
+                });
+
+                // bind edit/unlock
+                const editBtn = document.getElementById(`edit-${aid}`);
+                editBtn.addEventListener('click', async (e) => {
+                    const btn = e.currentTarget;
+                    btn.disabled = true;
+                    const subId = btn.dataset.submissionId;
+                    const resp = await unlockSubmission(subId, String(studentId));
+                    btn.disabled = false;
+                    if (resp && (resp.ok || resp.status === 'ok')) {
+                        showUnlockedState(aid, subId);
+                        alert('Unlocked — now you can replace or delete the file.');
+                    } else {
+                        alert('Could not unlock: ' + (resp.error || resp.message || JSON.stringify(resp)));
+                    }
+                });
+
+                // bind delete
+                const deleteBtn = document.getElementById(`delete-${aid}`);
+                deleteBtn.addEventListener('click', async (e) => {
+                    if (!confirm('Delete this submission?')) return;
+                    const btn = e.currentTarget;
+                    btn.disabled = true;
+                    const subId = btn.dataset.submissionId;
+                    const resp = await deleteSubmission(subId);
+                    btn.disabled = false;
+                    if (resp && (resp.ok || resp.deleted || resp.status === 'ok')) {
+                        resetSubmissionUI(aid);
+                        alert('Deleted');
+                    } else {
+                        alert('Could not delete: ' + (resp.error || resp.message || JSON.stringify(resp)));
+                    }
+                });
+
+            });
+        } catch (err) {
+            console.error("Error in loadAssignments:", err);
+            document.getElementById("assignContainer").innerHTML = "<p>Error loading assignments.</p>";
+        }
+    }
+
+    // ---------- submit student's assignment ----------
+    async function submitAssignment(assignmentId, file) {
+        const statusEl = document.getElementById(`status-${assignmentId}`);
+        const fileInput = document.getElementById(`file-${assignmentId}`);
+        const submitBtn = document.getElementById(`submit-${assignmentId}`);
+        const controls = document.getElementById(`controls-${assignmentId}`);
+        try {
+            if (statusEl) { statusEl.textContent = "Uploading..."; statusEl.style.color = ""; }
+            submitBtn.disabled = true;
+
+            if (!assignmentId) {
+                if (statusEl) { statusEl.textContent = "No assignment id"; statusEl.style.color = "red"; }
+                console.error("Missing assignmentId");
+                submitBtn.disabled = false;
+                return;
+            }
+            if (!studentId) {
+                if (statusEl) { statusEl.textContent = "No student id"; statusEl.style.color = "red"; }
+                console.error("Missing studentId");
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const form = new FormData();
+            form.append("student_id", String(studentId));
+            form.append("file", file);
+
+            const url = `${api}/assignments/${assignmentId}/submit`;
+            console.log('Uploading to', url, { assignmentId, studentId, fileName: file.name, fileSize: file.size });
+
+            const res = await fetch(url, {
+                method: "POST",
+                body: form
+            });
+
+            let body;
+            try { body = await res.json(); } catch(e) { body = await res.text(); }
+
+            console.log('Response:', res.status, body);
+
+            if (!res.ok) {
+                if (statusEl) {
+                    const errMsg = (body && body.message) ? body.message : JSON.stringify(body);
+                    statusEl.textContent = `Upload failed: ${errMsg}`;
+                    statusEl.style.color = "red";
+                }
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // success: show locked state and controls
+            const submissionId = body.submission_id || body.id || body.submissionId || null;
+            // file_url may be returned directly, otherwise try to build from returned file/path
+            let fileUrl = body.file_url || body.fileUrl || null;
+            if (!fileUrl && body.file_path) fileUrl = buildUrlFromPath(body.file_path);
+            if (!fileUrl && body.file) fileUrl = buildUrlFromPath(body.file);
+
+            if (statusEl) {
+                statusEl.textContent = "Submitted (Locked) ✓";
+                statusEl.style.color = "green";
+            }
+
+            if (fileInput) fileInput.disabled = true;
+            if (submitBtn) submitBtn.disabled = true;
+
+            if (controls) controls.style.display = "block";
+            const viewLink = document.getElementById(`view-${assignmentId}`);
+            const editBtn = document.getElementById(`edit-${assignmentId}`);
+            const deleteBtn = document.getElementById(`delete-${assignmentId}`);
+
+            if (viewLink && fileUrl) {
+                viewLink.href = fileUrl;
+                viewLink.style.display = "inline-block";
+                viewLink.textContent = "Open File";
+            }
+            if (editBtn) {
+                editBtn.style.display = "inline-block";
+                if (submissionId) editBtn.dataset.submissionId = submissionId;
+                editBtn.dataset.submissionId = submissionId || "";
+            }
+            if (deleteBtn) {
+                deleteBtn.style.display = "none"; // show only after unlocking
+                if (submissionId) deleteBtn.dataset.submissionId = submissionId;
+            }
+
+        } catch (err) {
+            console.error("Error submitting assignment:", err);
+            if (statusEl) {
+                statusEl.textContent = "Error during upload";
+                statusEl.style.color = "red";
+            }
+        } finally {
+            try { if (document.getElementById(`submit-${assignmentId}`)) document.getElementById(`submit-${assignmentId}`).disabled = false; } catch(e){}
+        }
+    }
+
+    // ---------- server interaction helpers ----------
+    async function checkSubmissionForAssignment(assignmentId) {
+        try {
+            const res = await fetch(`${api}/assignments/${assignmentId}/submission?student_id=${encodeURIComponent(String(studentId))}`);
+            if (!res.ok) {
+                try { const txt = await res.text(); console.warn('submission check returned non-OK', res.status, txt); } catch(e){}
+                return null;
+            }
+            const data = await res.json();
+            if (!data) return null;
+            if (data.ok === false) return null;
+            if (data.found === true || data.found === 'true') {
+                const submission = {
+                    submission_id: data.submission_id || data.id || data.submissionId || null,
+                    file_url: data.file_url || data.fileUrl || data.file || (data.file_path ? buildUrlFromPath(data.file_path) : null),
+                    locked: (data.locked === 1 || data.locked === true || data.locked === '1' || data.locked === 'true'),
+                    uploaded_at: data.uploaded_at || data.uploadedAt || null
+                };
+                return submission;
+            }
+            return null;
+        } catch (e) {
+            console.error('checkSubmissionForAssignment error:', e);
+            return null;
+        }
+    }
+
+    async function unlockSubmission(submissionId, actionBy, force=false) {
+        try {
+            const res = await fetch(`${api}/submission/${submissionId}/unlock`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action_by: actionBy, force: force })
+            });
+            try { return await res.json(); } catch(e){ return { ok: res.ok }; }
+        } catch (e) {
+            console.error("unlockSubmission error:", e);
+            return { ok: false, error: String(e) };
+        }
+    }
+
+    async function deleteSubmission(submissionId) {
+        try {
+            const res = await fetch(`${api}/submission/${submissionId}`, {
+                method: "DELETE"
+            });
+            try { return await res.json(); } catch(e){ return { ok: res.ok }; }
+        } catch (e) {
+            console.error("deleteSubmission error:", e);
+            return { ok: false, error: String(e) };
+        }
+    }
+
+    // ---------- UI state helpers ----------
+    function applyLockedUI(assignmentId, submission) {
+        const fileInput = document.getElementById(`file-${assignmentId}`);
+        const submitBtn = document.getElementById(`submit-${assignmentId}`);
+        const statusEl = document.getElementById(`status-${assignmentId}`);
+        const controls = document.getElementById(`controls-${assignmentId}`);
+        const viewLink = document.getElementById(`view-${assignmentId}`);
+        const editBtn = document.getElementById(`edit-${assignmentId}`);
+        const deleteBtn = document.getElementById(`delete-${assignmentId}`);
+
+        if (statusEl) {
+            statusEl.textContent = submission.locked ? "Submitted (Locked) ✓" : "Submitted";
+            statusEl.style.color = submission.locked ? "green" : "orange";
+        }
+        if (fileInput) fileInput.disabled = !!submission.locked;
+        if (submitBtn) submitBtn.disabled = !!submission.locked;
+
+        if (controls) controls.style.display = "block";
+        if (viewLink && submission.file_url) {
+            viewLink.href = submission.file_url;
+            viewLink.style.display = "inline-block";
+            viewLink.textContent = "Open File";
+        }
+        if (editBtn) {
+            editBtn.style.display = submission.locked ? "inline-block" : "none";
+            editBtn.dataset.submissionId = submission.submission_id || "";
+        }
+        if (deleteBtn) {
+            deleteBtn.style.display = submission.locked ? "none" : "inline-block";
+            deleteBtn.dataset.submissionId = submission.submission_id || "";
+        }
+    }
+
+    function showUnlockedState(assignmentId, submissionId) {
+        const fileInput = document.getElementById(`file-${assignmentId}`);
+        const submitBtn = document.getElementById(`submit-${assignmentId}`);
+        const editBtn = document.getElementById(`edit-${assignmentId}`);
+        const deleteBtn = document.getElementById(`delete-${assignmentId}`);
+        const statusEl = document.getElementById(`status-${assignmentId}`);
+
+        if (fileInput) fileInput.disabled = false;
+        if (submitBtn) submitBtn.disabled = false;
+        if (editBtn) editBtn.style.display = "none";
+        if (deleteBtn) {
+            deleteBtn.style.display = "inline-block";
+            deleteBtn.dataset.submissionId = submissionId || "";
+        }
+        if (statusEl) {
+            statusEl.textContent = "Unlocked — you may edit or delete";
+            statusEl.style.color = "orange";
+        }
+    }
+
+    function resetSubmissionUI(assignmentId) {
+        const fileInput = document.getElementById(`file-${assignmentId}`);
+        const submitBtn = document.getElementById(`submit-${assignmentId}`);
+        const controls = document.getElementById(`controls-${assignmentId}`);
+        const statusEl = document.getElementById(`status-${assignmentId}`);
+        const viewLink = document.getElementById(`view-${assignmentId}`);
+        const editBtn = document.getElementById(`edit-${assignmentId}`);
+        const deleteBtn = document.getElementById(`delete-${assignmentId}`);
+
+        if (fileInput) { fileInput.disabled = false; fileInput.value = ""; }
+        if (submitBtn) { submitBtn.disabled = false; }
+        if (controls) controls.style.display = "none";
+        if (statusEl) { statusEl.textContent = ""; statusEl.style.color = ""; }
+        if (viewLink) { viewLink.style.display = "none"; viewLink.href = "#"; }
+        if (editBtn) { editBtn.style.display = "none"; editBtn.dataset.submissionId = ""; }
+        if (deleteBtn) { deleteBtn.style.display = "none"; deleteBtn.dataset.submissionId = ""; }
+    }
+    </script>
+
+
+
+
+
+
+
+
+</body>
+</html>

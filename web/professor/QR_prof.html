@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code</title>
+</head>
+<body>
+
+<h2>QR Code for Course</h2>
+<img id="qrImage" src="" width="300">
+
+<script>
+    const api = "http://127.0.0.1:5000";
+    const courseId = 5; // ← غيريها حسب الكورس
+
+    document.getElementById("qrImage").src = `${api}/generate_qr/${courseId}`;
+</script>
+
+</body>
+</html>

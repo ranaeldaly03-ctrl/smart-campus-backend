@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generate QR</title>
+    <link rel="stylesheet" href="generate_qr.css"> <!-- استخدمي نفس التصميم -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+<body>
+
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="ProfessorName"></h2>
+            </li>
+            <li>
+                <a href="Prof_DaskBoard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a  class="active"  href="generate_qr.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Generate QR</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_students.html">
+                    <i class="fas fa-user-group"></i>
+                    <p>Students</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+
+
+    <div class="content">
+
+        <div class="title-info">
+            <p>Generate Attendance QR</p>
+            <i class="fas fa-qrcode"></i>
+        </div>
+
+        <div class="data-info" >
+
+            <label>Select Course:</label>
+            <select id="courseSelect">
+                <option value="">-- Choose Course --</option>
+            </select>
+
+            <div style="margin-top:15px;">
+                <button id="startBtn" class="btn-start">Start Attendance</button>
+                <button id="stopBtn" class="btn-stop" disabled>Stop Attendance</button>
+                <div id="qrBox" style="display:none"></div>
+                <button id="showAttendanceBtn" class="btn-show">Show Attendance</button>
+            </div>
+
+        </div>
+
+
+        <div id="attendanceBox" style="display:none;">
+            <h3>Attendance List</h3>
+            <p><strong>Students Attended:</strong> <span id="attendCount">0</span></p>
+
+            <table border="1">
+                <thead>
+                    <tr><th>ID</th><th>Name</th></tr>
+                </thead>
+                <tbody id="attendTable"></tbody>
+            </table>
+        </div>
+
+            <br>
+            <button onclick="loadAttendance()">
+                Refresh Attendance
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+    <script>
+    /* ====== إعدادات ====== */
+    const api = "http://127.0.0.1:5000";
+    const instId = localStorage.getItem("user_id"); // لازم يكون موجود بعد login
+    let currentSessionId = null;
+    let currentSessionCode = null;
+
+    /* ====== مساعدة (تحقق وجود عنصر) ====== */
+    function $(id) {
+    const el = document.getElementById(id);
+    if (!el) console.warn(`Missing element with id="${id}" in the HTML.`);
+    return el;
+    }
+
+    /* ====== تهيئة الصفحة بعد DOM ====== */
+    document.addEventListener("DOMContentLoaded", () => {
+    const profName = localStorage.getItem("user_name");
+    const profRole = localStorage.getItem("user_role");
+    const profImage = localStorage.getItem("user_image");
+
+    if (!profName || profRole !== "Instructor") {
+        // لو مش معاد تسجيل الدخول كـ دكتور
+        window.location.href = "login.html";
+        return;
+    }
+
+    // عين الاسم والصورة لو العناصر موجودة
+    const profEl = $("ProfessorName");
+    if (profEl) profEl.textContent = profName;
+
+    const imgEl = $("profilePic");
+    if (imgEl) imgEl.src = (profImage && profImage !== "null") ? `${api}/${profImage}` : `${api}/uploads/default.png`;
+
+    // الحالة الافتراضية للأزرار
+    const startBtn = $("startBtn");
+    const stopBtn = $("stopBtn");
+    if (startBtn) startBtn.disabled = false;
+    if (stopBtn) stopBtn.disabled = true;
+
+    // حمل كورسات الدكتور (لو عنصر select موجود)
+    loadMyCourses().catch(e => console.error("loadMyCourses error:", e));
+    });
+
+    /* ====== جلب كورسات الدكتور ====== */
+    async function loadMyCourses(){
+    const select = $("courseSelect");
+    if (!select) return; // مش هنعمل لو مفيش select
+
+    if (!instId) {
+        console.error("Instructor id missing in localStorage (user_id).");
+        select.innerHTML = '<option value="">(خطأ: user_id مفقود)</option>';
+        return;
+    }
+
+    try {
+        const res = await fetch(`${api}/instructor/${instId}/courses`);
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        const courses = await res.json();
+        select.innerHTML = '<option value="">-- Choose a Course --</option>';
+
+        const list = Array.isArray(courses) ? courses : (courses.courses || courses.data || []);
+        if (!list || list.length === 0) {
+        select.innerHTML += '<option value="">(لا توجد مواد)</option>';
+        return;
+        }
+
+        list.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.id ?? c.course_id;
+        opt.textContent = c.course_name ?? c.name ?? ("Course " + (c.id ?? ""));
+        select.appendChild(opt);
+        });
+    } catch (err) {
+        console.error("Error loading courses:", err);
+        if (select) select.innerHTML = '<option value="">(خطأ في تحميل المواد)</option>';
+    }
+    }
+
+    /* ====== START attendance ====== */
+    const startBtnEl = () => $("startBtn");
+    if (startBtnEl()) {
+    startBtnEl().addEventListener("click", async () => {
+        const sel = $("courseSelect");
+        if (!sel) return alert("عنصر اختيار المادة مفقود.");
+        const courseId = sel.value;
+        if (!courseId) return alert("اختاري المادة أولاً.");
+
+        try {
+        const res = await fetch(`${api}/start_attendance/${courseId}`, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ instructor_id: instId })
+        });
+        if (!res.ok) {
+            const txt = await res.text();
+            throw new Error(`Start failed (${res.status}) : ${txt}`);
+        }
+
+        const data = await res.json();
+        currentSessionId = data.session_id ?? data.id ?? null;
+        currentSessionCode = data.session_code ?? data.code ?? data.session_code ?? null;
+
+        showSessionCode(currentSessionCode);
+
+        const stopBtn = $("stopBtn");
+        if (stopBtn) stopBtn.disabled = false;
+        const startBtn = $("startBtn");
+        if (startBtn) startBtn.disabled = true;
+
+        // حدّث الحضور فورًا
+        if (currentSessionId) await loadAttendanceForSession(currentSessionId);
+
+        } catch (err) {
+        console.error("Error starting attendance:", err);
+        alert("Could not start attendance: " + (err.message || err));
+        }
+    });
+    }
+
+    /* ====== STOP attendance ====== */
+    const stopBtnEl = () => $("stopBtn");
+    if (stopBtnEl()) {
+    stopBtnEl().addEventListener("click", async () => {
+        const sel = $("courseSelect");
+        if (!sel) return alert("عنصر اختيار المادة مفقود.");
+        const courseId = sel.value;
+        if (!courseId) return alert("اختاري المادة أولاً.");
+
+        try {
+        const res = await fetch(`${api}/stop_attendance/${courseId}`, { method: "POST" });
+        if (!res.ok) {
+            const txt = await res.text();
+            throw new Error(`Stop failed (${res.status}) : ${txt}`);
+        }
+
+        currentSessionId = null;
+        currentSessionCode = null;
+        hideSessionCode();
+        const startBtn = $("startBtn");
+        const stopBtn = $("stopBtn");
+        if (startBtn) startBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = true;
+
+        alert("Attendance stopped.");
+        } catch (err) {
+        console.error("Error stopping attendance:", err);
+        alert("Could not stop attendance: " + (err.message || err));
+        }
+    });
+    }
+
+    /* ====== show attendance button ====== */
+    const showBtn = () => $("showAttendanceBtn");
+    if (showBtn()) {
+    showBtn().addEventListener("click", async () => {
+        const sel = $("courseSelect");
+        if (!sel) return alert("عنصر اختيار المادة مفقود.");
+        const courseId = sel.value;
+        if (!courseId) return alert("اختاري المادة أولاً.");
+
+        try {
+        let sid = currentSessionId;
+        if (!sid) {
+            const sres = await fetch(`${api}/course/${courseId}/last_session`);
+            if (!sres.ok) throw new Error("No last session found");
+            const last = await sres.json();
+            sid = last.id ?? last.session_id ?? null;
+            if (!sid) throw new Error("No session id in last_session response");
+        }
+
+        await loadAttendanceForSession(sid);
+        const box = $("attendanceBox");
+        if (box) box.style.display = "block";
+        } catch (err) {
+        console.error("Error showing attendance:", err);
+        alert("Could not load attendance: " + (err.message || err));
+        }
+    });
+    }
+
+    /* ====== عرض / إخفاء كود الجلسة ====== */
+    function showSessionCode(code) {
+    const box = $("qrBox");
+    if (!box) return;
+    box.style.display = "block";
+    box.innerHTML = `
+        <h3>Session Code</h3>
+        <div style="font-size:26px;font-weight:700;margin:10px 0;">${code ?? '—'}</div>
+        <p>Students must enter this code (or scan QR) to mark attendance.</p>
+    `;
+    }
+    function hideSessionCode() {
+    const box = $("qrBox");
+    if (!box) return;
+    box.style.display = "none";
+    box.innerHTML = "";
+    }
+
+    /* ====== تحميل الحضور لجلسة معينة ====== */
+    async function loadAttendanceForSession(sessionId) {
+    if (!sessionId) return;
+    try {
+        const res = await fetch(`${api}/attendance_session/${sessionId}/students`);
+        if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Failed to load session attendance (${res.status}) : ${txt}`);
+        }
+        const data = await res.json();
+        const students = data.students ?? (Array.isArray(data) ? data : data.data ?? []);
+        const count = data.count ?? students.length;
+
+        const tbody = $("attendTable");
+        if (tbody) {
+        tbody.innerHTML = "";
+        students.forEach(s => {
+            tbody.innerHTML += `<tr><td>${s.id ?? s.student_id}</td><td>${s.name ?? s.full_name ?? s.user_name}</td></tr>`;
+        });
+        }
+
+        const cnt = $("attendCount");
+        if (cnt) cnt.textContent = count;
+    } catch (err) {
+        console.error("Error loading attendance for session:", err);
+        alert("Could not load session students: " + (err.message || err));
+    }
+    }
+    </script>
+
+
+
+
+
+</body>
+</html>

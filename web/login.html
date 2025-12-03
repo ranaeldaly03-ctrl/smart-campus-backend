@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="login.css">
+    <title>login</title>
+</head>
+<body>
+    <div>
+        <p>welcome</p>
+        <h1>Login</h1>
+        <img src="loginn.png" alt="photo">
+         <form >
+            <label for="id">ID</label>
+            <input type="text" id="id" placeholder="ID" required> <br>
+            <label for="pass">password</label>
+            <input type="password" id="pass" placeholder="password" required> <br>
+            <button type="button" onclick="loginUser()">Login</button>
+            <p id="msg"> </p>
+        </form>
+    
+
+    </div>
+
+<script>
+const api = "http://127.0.0.1:5000";
+
+async function loginUser() {
+    const id = document.getElementById("id").value;
+    const password = document.getElementById("pass").value;
+    const msg = document.getElementById("msg");
+
+    msg.textContent = "Loading...";
+
+    try {
+        const res = await fetch(`${api}/login`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id, password})
+        });
+
+        const data = await res.json();
+
+        if (data.status === "ok") {
+            // حفظ بيانات المستخدم مؤقتًا
+            localStorage.setItem("user_name", data.name);
+            localStorage.setItem("user_role", data.role);
+            localStorage.setItem("user_id", data.id);
+            localStorage.setItem("user_image", data.image);
+
+
+            msg.style.color = "green";
+            msg.textContent = "Login successful! Redirecting...";
+
+            // تحويل حسب الدور
+            if (data.role === "Admin") {
+                window.location.href = "admin.html";
+            } else if (data.role === "Student") {
+                window.location.href = "stu_dashboard.html";
+            } else if (data.role === "Instructor") {
+                window.location.href = "Prof_DaskBoard.html";
+            }
+        } else {
+            msg.style.color = "red";
+            msg.textContent = data.message;
+        }
+    } catch (err) {
+        msg.style.color = "red";
+        msg.textContent = "Server error!";
+        console.error(err);
+    }
+}
+</script>
+
+
+   
+</body>
+</html>

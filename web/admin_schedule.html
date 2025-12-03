@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="admin_schedule.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <title>Schedule</title>
+</head>
+<body>
+
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="adminName"></h2>
+            </li>
+            <li>
+                <a href="admin.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="users.html">
+                    <i class="fas fa-user-group"></i>
+                    <p>Users</p>
+                </a>
+            </li>
+            <li>
+                <a href="courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="admin_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="container">
+
+        <div class="title">
+            <i class="fas fa-users"></i>
+            <h1>Courses Schedule</h1>
+        </div>
+        
+        
+        <table id="scheduleTable">
+            <thead>
+                <tr>
+                    <th>Course</th>
+                    <th>Professor</th>
+                    <th>Day</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Room</th>
+                    <th>Edit</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <p id="msg"></p>
+    </div>
+
+    <script>
+        const api = "http://127.0.0.1:5000";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const name = localStorage.getItem("user_name");
+            const role = localStorage.getItem("user_role");
+            const image = localStorage.getItem("user_image");
+
+
+            if (!name || role !== "Admin") {
+                window.location.href = "login.html";
+                return;
+            }
+               
+            document.getElementById("adminName").textContent = name;
+                
+            const profilePic = document.getElementById("profilePic");
+            
+             if (image && image !== "null" && image !== ""){
+                    document.getElementById("profilePic").src = `${api}/${image}`;
+                } else {
+                    document.getElementById("profilePic").src = `${api}/uploads/admin.png`;
+                }
+
+            
+        });
+
+        // 🔹 تحميل الجدول
+        async function loadSchedule() {
+            try {
+                const res = await fetch(`${api}/schedule`);
+                const data = await res.json();
+
+                const tbody = document.querySelector("#scheduleTable tbody");
+                tbody.innerHTML = "";
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan='7'>No schedule data available</td></tr>";
+                    return;
+                }
+
+                data.forEach(item => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${item.course_name}</td>
+                        <td>${item.instructor}</td>
+                        <td><input value="${item.day}" /></td>
+                        <td><input value="${item.start_time}" /></td>
+                        <td><input value="${item.end_time}" /></td>
+                        <td><input value="${item.room}" /></td>
+                        <td><button onclick="updateSchedule(${item.id}, this)">Save</button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("❌ Error loading schedule:", error);
+                document.getElementById("msg").textContent = "Error loading data!";
+            }
+        }
+
+        // 🔹 تعديل بيانات الجدول
+        async function updateSchedule(id, button) {
+            const row = button.closest("tr");
+            const inputs = row.querySelectorAll("input");
+
+            const data = {
+                day: inputs[0].value,
+                start_time: inputs[1].value,
+                end_time: inputs[2].value,
+                room: inputs[3].value
+            };
+
+            try {
+                const res = await fetch(`${api}/schedule/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+                const msg = document.getElementById("msg");
+
+                if (res.ok) {
+                    msg.style.color = "green";
+                    msg.textContent = result.message || "✅ Schedule updated successfully!";
+                } else {
+                    msg.style.color = "red";
+                    msg.textContent = result.message || "❌ Error updating schedule!";
+                }
+            } catch (error) {
+                console.error("❌ Update error:", error);
+                document.getElementById("msg").textContent = "Connection error!";
+            }
+        }
+
+        window.onload = loadSchedule;
+    </script>
+</body>
+</html>

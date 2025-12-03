@@ -1,0 +1,112 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    background-color:#e6ecf4;
+
+}
+
+div{
+    background-color: #fdfeff;
+    height: calc(100vh - 50px);
+    margin-top: 50px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+ img{
+    width: 300px;
+    margin-bottom: 50px;
+    animation-name: im;
+    animation-duration: 2s;
+    
+ }
+
+ @keyframes im {
+      from {width: 0%;}
+      to {width: 300px;}
+ }
+
+ label{
+    display: inline-block;
+    width:  100px;
+    margin-bottom: 10px;
+ }
+
+ input{
+    margin-bottom: 10px;
+    outline-color: #b1c9ea;
+    padding: 12px 5px;
+    border-color: #fdfeff;
+    border-radius: 12px;
+    box-shadow: inset 5px 5px 10px #b8bcc2 , inset -5px -5px 10px #ffffff;
+    outline: none;
+    font-size: 14px;
+    text-align: center;
+ }
+
+ @keyframes glow{
+   0% { box-shadow: 0 0 5px #dede9e;}
+   50% { box-shadow: 0 0 15px #dede9e;}
+   100% { box-shadow: 0 0 5px #dede9e;}
+ }
+
+ input:focus {
+   background: #e0e5ec;
+   animation: glow 1.5s infinite ease-in-out;
+    outline: none;
+ }
+
+ 
+ button{
+    width: 70px;
+    border: none;
+    border: 12px;
+    background: #e0e5ec;
+    box-shadow: 5px 5px 10px #b8bcc2 , -5px -5px 10px #ffffff;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.9s ease;
+    display: inline;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+    margin-left: 100px;
+    height: 70px;
+    border-radius: 50%;
+ }
+
+button:hover{
+   background-color: #b1c9ea;
+}
+
+ p{
+    align-self: flex-start;
+    margin-left: 70px;
+    font-size: 20px;
+    color: #6a84a8;
+ }
+
+ h1{
+    align-self: flex-start;
+    margin-left: 70px;
+    font-size: 80px;
+    color: #3c5c88;
+    animation-name: text;
+    animation-duration: 2s;
+ }
+
+ label{
+   color: #b09955;
+ }
+
+ @keyframes text {
+      from {margin-left: 0px;}
+      to {margin-left: 70px;}
+ }

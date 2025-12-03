@@ -1,0 +1,214 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f3f6fa;
+  color: #1c2e46;
+  min-height: 100vh;
+}
+
+/* ===============================
+      SIDEBAR (نفس الهيكل + الألوان الجديدة)
+================================*/
+.menu {
+  width: 80px;
+  height: 100vh;
+  background-color: #bfd0e9; /* اللون الأزرق الفاتح */
+  color: #1c2e46;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding-top: 10px;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.08);
+  overflow-y:auto;
+  overflow-x:auto;
+  transition: width 0.45s ease;
+  z-index: 10;
+}
+
+.menu:hover {
+  width: 260px;
+}
+
+/* list */
+.menu ul {
+  list-style: none;
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.menu ul li {
+  padding: 12px 8px;
+  border-bottom: 1px solid #d5e0ec;
+  position: relative;
+}
+
+/* profile block */
+.profile {
+  text-align: center;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+}
+
+.profile .img-box img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid #4c6b9f;
+  object-fit: cover;
+  display: inline-block;
+  transition: transform .3s;
+}
+
+.menu:hover .profile .img-box img {
+  width: 80px;
+  height: 80px;
+}
+
+/* links */
+.menu ul li a {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px;
+  margin: 4px 6px;
+  border-radius: 8px;
+  transition: background-color .25s, color .25s, transform .25s;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* icon only state: hide text when collapsed */
+.menu ul li a i {
+  min-width: 28px;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* label paragraph inside link */
+.menu ul li a p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity .3s, transform .3s;
+}
+
+/* show labels on hover */
+.menu:hover ul li a p {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* active & hover styles */
+.menu ul li a.active,
+.menu ul li a:hover {
+  background-color: #e6eefb;
+  color: #2b4d75;
+  box-shadow: 0 2px 6px rgba(43,77,117,0.06);
+}
+
+/* special log-out at bottom */
+.log-out{
+  margin-top: auto;
+  padding-bottom: 18px;
+}
+
+.log-out a{
+  background-color:#a7b8d1;
+  border-radius: 8px;
+}
+
+
+.content {
+  margin-left: 100px;
+  padding: 30px;
+  transition: margin-left 0.45s ease;
+  min-height: 100vh;
+}
+
+/* shift content more when menu expanded */
+.menu:hover ~ .content,
+.menu:focus-within ~ .content {
+  margin-left: 280px;
+}
+
+/* TITLE */
+.title-info {
+  background: #bfd0e9;
+  padding: 12px 18px;
+  margin-top: 7px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #1c2e46;
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+}
+
+
+/* COURSES GRID */
+.courses-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.course-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  text-align: center;
+  transition: 0.3s;
+  margin: 10px;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+}
+
+.course-icon {
+  font-size: 35px;
+  color: #4c6b9f;
+}
+
+.course-card h3 {
+  margin: 10px 0;
+  color: #1c2e46;
+}
+
+.course-card button {
+  margin-top: 10px;
+  padding: 8px 15px;
+  border: none;
+  background: #4c6b9f;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.course-card button:hover {
+  background: #2b4d75;
+}
+
+
+/* responsive */
+@media (max-width: 800px) {
+  .menu:hover { width: 220px; }
+  .menu { width: 70px; }
+  .content { margin-left: 90px; padding: 18px; }
+  .data-info { gap: 12px; }
+  .box { min-width: 160px; padding: 12px; }
+}

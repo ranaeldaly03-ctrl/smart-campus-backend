@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quizes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="stu_assigment.css">
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="studentName"></h2>
+            </li>
+            <li>
+                <a href="stu_dashboard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_att.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Attendance</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_assigment.html">
+                    <i class="fas fa-check-double"></i>
+                    <p>Assignments</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="stu_quiz.html">
+                    <i class="far fa-edit"></i>
+                    <p>Quizzes</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_deg.html">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Degree</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+
+        <div class="title-info">
+            <p>My Quizzes</p>
+            <i class="fas fa-question-circle"></i>
+        </div>
+
+        <div id="quizContainer" class="quiz-container"></div>
+    </div>
+
+    <script>
+    const api = "http://127.0.0.1:5000";
+
+    let studentId;
+
+    document.addEventListener("DOMContentLoaded", () => {
+    studentId = localStorage.getItem("user_id");
+    const studentName = localStorage.getItem("user_name");
+    const studentRole = localStorage.getItem("user_role");
+    const studentImage = localStorage.getItem("user_image");
+
+    if (!studentId || studentRole !== "Student") {
+        document.getElementById("quizContainer").innerHTML = "<p class='muted'>You are not logged in as a student.</p>";
+        console.warn("studentId missing or role mismatch:", studentId, studentRole);
+        return;
+    }
+
+    document.getElementById("studentName").textContent = studentName || "Student";
+    document.getElementById("profilePic").src =
+        studentImage && studentImage !== "null" ? `${api}/${studentImage}` : `${api}/uploads/default.png`;
+
+    loadQuizzes();
+    });
+
+    async function loadQuizzes() {
+    const container = document.getElementById("quizContainer");
+    container.innerHTML = "<p>Loading...</p>";
+
+    try {
+        const res = await fetch(`${api}/student/${studentId}/quizzes`);
+        if (!res.ok) {
+        const text = await res.text();
+        console.error("API returned not OK:", res.status, text);
+        container.innerHTML = `<p class="muted">Server error: ${res.status} — check server logs.</p>`;
+        return;
+        }
+
+        const quizzes = await res.json();
+        if (!Array.isArray(quizzes)) {
+        console.warn("Quizzes response not an array:", quizzes);
+        container.innerHTML = "<p class='muted'>Unexpected server response (not a list).</p>";
+        return;
+        }
+
+        if (quizzes.length === 0) {
+        container.innerHTML = "<p class='muted'>No quizzes available.</p>";
+        return;
+        }
+
+        container.innerHTML = "";
+        quizzes.forEach(q => {
+        // defensive defaults
+        const start = q.start_time ? new Date(q.start_time) : null;
+        const end = q.end_time ? new Date(q.end_time) : null;
+        const created = q.created_at ? new Date(q.created_at) : null;
+        const question_count = q.question_count ?? q.questions ?? 0;
+        const duration = q.duration ?? q.time_minutes ?? 0;
+
+        const now = new Date();
+        let statusText = "Unknown";
+        let disabled = true;
+
+        if (!start) {
+            statusText = "No start time";
+        } else if (now < start) {
+            statusText = "Not available yet";
+        } else if (end && now > end) {
+            statusText = "Quiz ended";
+        } else {
+            statusText = "Start Quiz";
+            disabled = false;
+        }
+
+        container.innerHTML += `
+            <div class="card ${disabled ? 'muted' : 'active'}">
+            <h3>${q.title || q.name || "Untitled"}</h3>
+            <p><strong>Course:</strong> ${q.course_name || q.course || ''}</p>
+            ${created ? `<p><strong>Created:</strong> ${created.toLocaleString()}</p>` : ''}
+            ${start ? `<p><strong>Start:</strong> ${start.toLocaleString()}</p>` : ''}
+            ${end ? `<p><strong>End:</strong> ${end.toLocaleString()}</p>` : ''}
+            <p><strong>Questions:</strong> ${question_count}</p>
+            <p><strong>Duration:</strong> ${duration} minutes</p>
+            <button ${disabled ? 'disabled' : ''} onclick="startQuiz(${q.id})">${statusText}</button>
+            </div>
+        `;
+        });
+
+    } catch (err) {
+        console.error("Error loading quizzes:", err);
+        container.innerHTML = "<p class='muted'>Error loading quizzes. Check console for details.</p>";
+    }
+    }
+
+    function startQuiz(id) {
+    if (!id) return;
+    localStorage.setItem("quiz_id", id);
+    window.location.href = "start_quiz.html";
+    }
+    </script>
+
+
+
+
+
+</body>
+</html>

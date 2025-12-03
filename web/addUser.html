@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add_User</title>
+    <link rel="stylesheet" href="addUser.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+<body>
+
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="adminName"></h2>
+            </li>
+            <li>
+                <a href="admin.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="users.html">
+                    <i class="fas fa-user-group"></i>
+                    <p>Users</p>
+                </a>
+            </li>
+            <li>
+                <a href="courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="admin_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="users">
+        <form onsubmit="addUser(); return false;">
+             <div class="title">
+                <i class="fas fa-add"></i>
+                <h1 class="add">ADD Users</h1>
+            </div>
+
+            <div class="name">
+                <label for="input">Name</label>
+                <input type="text" id="name">
+            </div>
+
+
+            <div class="id">
+                <label for="input">ID</label>
+                <input type="number" id="id" placeholder="Optional (auto-generated)">
+            </div>
+
+
+            <div class="email">
+                <label for="input">Email</label>
+                <input type="email" id="email">
+            </div>
+
+
+            <div class="pass">
+                <label for="pass">Password</label>
+                <input type="password" id="pass">
+            </div>
+
+
+            <div class="phone">
+                <label for="input">Phone number</label>
+                <input type="number" id="phone">
+            </div>
+
+
+            <div class="department">
+                <label for="input">Department</label>
+                <input type="text" id="department">
+            </div>
+
+
+            <div class="image">
+                <label for="image">Image URL </label>
+                <input type="file" id="image" placeholder="e.g. user.jpg">
+            </div>
+
+
+            <div class="role">
+                <label for="role">Select role</label>
+                <select id="role" onchange="toggleLevel()">
+                    <option value="">--Choose Role--</option>
+                    <option value="Student">Student</option>
+                    <option value="Instructor">Professor</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+
+
+            <div class="level">
+                    <label for="level">Select Level</label>
+                    <select id="level">
+                        <option value="">Levels</option>
+                        <option value="0">Prep</option>
+                        <option value="1">Level 1</option>
+                        <option value="2">Level 2</option>
+                        <option value="3">Level 3</option>
+                        <option value="4">Level 4</option>
+                    </select>
+             </div>
+            <button onclick="addUser()">Add</button>
+        </form>
+
+        
+
+    </div>
+
+    <p class="msg" id="msg"></p>
+
+    <a href="admin.html" class="back-link"><i class="fas fa-arrow-left"></i>Back to dashboard</a>
+    <a href="users.html" class="go-link"><i class="fas fa-arrow-right"></i>Go to users table</a>
+</body>
+
+<script>
+    const api = "http://127.0.0.1:5000";
+    document.addEventListener("DOMContentLoaded", () => {
+            const name = localStorage.getItem("user_name");
+            const role = localStorage.getItem("user_role");
+            const image = localStorage.getItem("user_image");
+
+
+            if (!name || role !== "Admin") {
+                window.location.href = "login.html";
+                return;
+            }
+               
+            document.getElementById("adminName").textContent = name;
+                
+            const profilePic = document.getElementById("profilePic");
+            
+             if (image && image !== "null" && image !== ""){
+                    document.getElementById("profilePic").src = `${api}/${image}`;
+                } else {
+                    document.getElementById("profilePic").src = `${api}/uploads/admin.png`;
+                }
+
+            
+        });
+
+     function toggleLevel(){
+            const role = document.getElementById("role").value;
+            const levelDiv = document.getElementById("level").parentElement;
+
+            if (role == "Student"){
+                levelDiv.style.display = "block";
+            } else{
+                levelDiv.style.display = "none";
+            }
+        }
+
+    async function addUser() {
+        event.preventDefault();
+        const msg = document.getElementById('msg');
+        msg.textContent = '';
+        msg.style.color = 'red';
+
+        const level = document.getElementById('level').value;
+        const role =document.getElementById('role').value;
+        if (!role){
+            msg.textContent = 'Please select a role.';
+            return;
+        }
+
+        const formData = new FormData();
+           formData.append('name', document.getElementById('name').value);
+           formData.append('email', document.getElementById('email').value);
+           formData.append('pass', document.getElementById('pass').value);
+           formData.append('phone', document.getElementById('phone').value);
+           formData.append('department', document.getElementById('department').value);
+           formData.append('level', role == 'Student' ? level : '');
+           formData.append('role', role);
+        
+        const imagefile = document.getElementById('image').files[0];
+        if (imagefile) {
+            formData.append('image', imagefile);
+        }   
+
+        let endpoint ='';
+        if (role === 'Student'){
+            endpoint = '/add_student';
+        }else if (role === 'Instructor'){
+            endpoint = '/add_instructor';
+        }else if(role === 'Admin'){
+            endpoint = '/add_admin';
+        }
+
+        try{
+            const response = await fetch(`${api}${endpoint}` , {
+                method: 'POST',
+                body: formData
+            });
+
+            // console.log('Response:', response);
+
+            const result = await response.json();
+
+            if(response.ok){
+                msg.style.color = 'green';
+                msg.textContent = result.message || '✅ User added successfully!';
+                
+                if (result.user_id && imagefile) {
+                    const uploadForm = new formData();
+                    uploadFornm.append('image', imagefile);
+                    const uploadres = await fetch(`${api}/upload_image/${result.user_id}`, {
+                        method: 'POST',
+                        body: uploadform
+                    });
+                    const uploadData = await uploadres.json();
+                    if (uploadres.ok) msg.textContent += ' Image uploaded!';
+                    else msg.textContent += ' Image upload failed';
+                }
+
+                document.querySelectorAll('input, select').forEach(el => el.value = '');
+
+            }else {
+                msg.textContent = result.message || 'Error adding user.';
+            }
+
+        } catch (error) {
+            msg.textContent = 'Connection error' + error.message;
+            alert('Connection failed: ' + error.message);
+        }
+    }
+
+
+    
+    
+
+
+</script>
+</html>

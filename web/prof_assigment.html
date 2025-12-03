@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assignment Submissions</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="Prof_courses.css">
+</head>
+
+<body>
+
+<!-- ============= SIDEBAR ============= -->
+<div class="menu">
+  <ul>
+    <li class="profile">
+      <div class="img-box">
+        <img id="profilePic" src="" alt="profile">
+      </div>
+      <h2 id="ProfessorName"></h2>
+    </li>
+
+    <li><a href="Prof_DaskBoard.html"><i class="fas fa-home"></i><p>dashboard</p></a></li>
+    <li><a href="generate_qr.html"><i class="fas fa-qrcode"></i><p>Generate QR</p></a></li>
+    <li><a href="Prof_students.html"><i class="fas fa-user-group"></i><p>Students</p></a></li>
+    <li><a href="Prof_courses.html"><i class="fa fa-list-alt"></i><p>Courses</p></a></li>
+    <li><a href="prof_assigment.html"><i class="far fa-edit"></i><p>Assignments</p></a></li>
+    <li><a href="Prof_ads.html"><i class="fab fa-adversal"></i><p>ADS</p></a></li>
+    <li><a href="Prof_schedule.html"><i class="fas fa-table"></i><p>Tables</p></a></li>
+    <li><a href="prof_mid&final.html"><i class="Mid & Final"></i><p>Tables</p></a></li>
+
+    <li class="log-out"><a href="login.html"><i class="fas fa-sign-out-alt"></i><p>Log Out</p></a></li>
+  </ul>
+</div>
+
+<!-- ============= CONTENT ============= -->
+<div class="content">
+
+  <div class="title-info">
+    <p>Assignment Submissions</p>
+    <i class="fas fa-file-alt"></i>
+  </div>
+
+  <div class="box card">
+
+    <div class="row">
+      <label>Select Course</label>
+      <select id="courseSelect">
+        <option value="">-- Select Course --</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label>Select Assignment</label>
+      <select id="assignmentSelect">
+        <option value="">-- Select Assignment --</option>
+      </select>
+    </div>
+
+    <div id="submissionsContainer" style="margin-top: 20px;">
+      <!-- Filled by JS -->
+    </div>
+
+  </div>
+</div>
+
+<script>
+const api = "http://127.0.0.1:5000";
+let profId = localStorage.getItem("user_id");
+
+// ================= PROFILE ==================
+function loadProfile(){
+  let name = localStorage.getItem("user_name");
+  let img = localStorage.getItem("user_image");
+  let role = localStorage.getItem("user_role");
+
+  if(!name || role !== "Instructor"){
+    window.location.href = "login.html";
+    return;
+  }
+
+  document.getElementById("ProfessorName").textContent = name;
+
+  document.getElementById("profilePic").src =
+    img && img !== "null" ? `${api}/${img}` : `${api}/uploads/default.png`;
+}
+
+// ================= LOAD COURSES ==================
+async function loadCourses(){
+  const select = document.getElementById("courseSelect");
+
+  const res = await fetch(`${api}/instructor/${profId}/courses`);
+  const data = await res.json();
+
+  select.innerHTML = '<option value="">-- Select Course --</option>';
+
+  (data.courses || data).forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.id;
+    opt.textContent = c.course_name;
+    select.appendChild(opt);
+  });
+}
+
+// ================= LOAD ASSIGNMENTS ==================
+async function loadAssignments(courseId){
+  const select = document.getElementById("assignmentSelect");
+  select.innerHTML = '<option value="">-- Select Assignment --</option>';
+
+  const res = await fetch(`${api}/course/${courseId}/assignments`);
+  const data = await res.json();
+
+  (data.assignments || data).forEach(a => {
+    if(a.type === "Assignment"){
+      const opt = document.createElement("option");
+      opt.value = a.id;
+      opt.textContent = a.title;
+      select.appendChild(opt);
+    }
+  });
+}
+
+// ================= LOAD SUBMISSIONS ==================
+async function loadSubmissions(assignmentId){
+  const container = document.getElementById("submissionsContainer");
+  container.innerHTML = "<p>Loading...</p>";
+
+  const res = await fetch(`${api}/assignment/${assignmentId}/submissions`);
+  const data = await res.json();
+
+  if(!data.submissions || data.submissions.length === 0){
+    container.innerHTML = "<p>No submissions yet.</p>";
+    return;
+  }
+
+  container.innerHTML = "";
+
+  data.submissions.forEach(sub => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.style.marginBottom = "15px";
+    card.style.padding = "15px";
+
+    card.innerHTML = `
+      <h3>${sub.student_name}</h3>
+      <p><strong>Uploaded:</strong> ${sub.uploaded_at}</p>
+
+      <a href="${sub.file_url}" class="btn" target="_blank" style="margin-top:5px; display:inline-block;">
+        <i class="fas fa-file"></i> Open File
+      </a>
+
+      <div style="margin-top:10px;">
+        <label>Grade:</label>
+        <input type="number" id="grade-${sub.submission_id}" value="${sub.grade || ''}" min="0" style="width:80px;">
+        <button onclick="saveGrade(${sub.submission_id})" class="btn" style="margin-left:8px;">Save</button>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+// ================= SAVE GRADE ==================
+async function saveGrade(submissionId){
+  const grade = document.getElementById(`grade-${submissionId}`).value;
+
+  const res = await fetch(`${api}/submission/${submissionId}/grade`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ grade })
+  });
+
+  const data = await res.json();
+
+  if(data.ok){
+    alert("Grade saved.");
+  } else {
+    alert("Error saving grade.");
+  }
+}
+
+// ============ EVENT LISTENERS ============
+document.getElementById("courseSelect").addEventListener("change", e => {
+  let id = e.target.value;
+  if(id) loadAssignments(id);
+});
+
+document.getElementById("assignmentSelect").addEventListener("change", e => {
+  let id = e.target.value;
+  if(id) loadSubmissions(id);
+});
+
+// ============ INIT ============
+loadProfile();
+loadCourses();
+</script>
+
+</body>
+</html>

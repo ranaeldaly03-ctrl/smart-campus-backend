@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="stu_dashboard.css">
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="studentName"></h2>
+            </li>
+            <li>
+                <a class="active" href="stu_dashboard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_att.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Attendance</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_assigment.html">
+                    <i class="fas fa-check-double"></i>
+                    <p>Assignments</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_quiz.html">
+                    <i class="far fa-edit"></i>
+                    <p>Quizzes</p>
+                </a>
+            </li>
+            <li>
+                <a href="stu_deg.html">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Degree</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="title-info">
+        <p>Student Dashboard</p>
+        <i class="fas fa-user-graduate"></i>
+        </div>
+
+        <div class="data-info">
+        <div class="box">
+            <i class="fas fa-calendar-alt"></i>
+            <div class="data"><p>Level / Year</p><span id="studentLevel">-</span></div>
+        </div>
+
+        <div class="box">
+            <i class="fas fa-book"></i>
+            <div class="data"><p>Courses Enrolled</p><span id="coursesCount">0</span></div>
+        </div>
+
+        <div class="box">
+            <i class="fas fa-file-alt"></i>
+            <div class="data"><p>Assignments</p><span id="assignmentsCount">0</span></div>
+        </div>
+        </div>
+
+        <div class="title-info small"><p>My Courses</p></div>
+        <table id="coursesTable">
+        <thead><tr><th>Course</th><th>Department</th><th>Assignments</th></tr></thead>
+        <tbody></tbody>
+        </table>
+
+        <div class="title-info small"><p>Upcoming Assignments</p></div>
+        <table id="assignTable">
+        <thead><tr><th>Title</th><th>Course</th><th>Due Date</th><th>Max Marks</th></tr></thead>
+        <tbody></tbody>
+        </table>
+
+        <p id="msg" class="msg"></p>
+    </div>
+
+    <script>
+    const api = "http://127.0.0.1:5000";
+
+    let studentId, studentName, studentRole, studentImage;
+
+    // عند تحميل الصفحة احنا بنجهز القيم وننفّذ التحميل
+    document.addEventListener("DOMContentLoaded", () => {
+
+        studentId = localStorage.getItem("user_id");
+        studentName = localStorage.getItem("user_name");
+        studentRole = localStorage.getItem("user_role");
+        studentImage = localStorage.getItem("user_image");
+
+        // debug: لو حابة تشوفي القيم في الكونسول
+        console.log("LS studentId:", studentId, "studentRole:", studentRole, "studentImage:", studentImage);
+
+        if (!studentId || studentRole !== "Student") {
+            // بدل إعادة توجيه مفاجئ، أعرض رسالة واضحة أو ارجعي للـ login
+            // window.location.href = "login.html";
+            document.getElementById("msg").textContent = "You are not logged in as a Student. Please login.";
+            return;
+        }
+
+        // عرض الاسم والصورة
+        document.getElementById("studentName").textContent = studentName || "Student";
+        const profilePic = document.getElementById("profilePic");
+        profilePic.src = studentImage && studentImage !== "null" ? `${api}/${studentImage}` : `${api}/uploads/default.png`;
+
+        // الآن بعد ما studentId متعرّف، نطلب الداشبورد
+        loadDashboard();
+    });
+
+    async function loadDashboard() {
+        try {
+            if (!studentId) {
+                console.warn("loadDashboard called but studentId is undefined");
+                return;
+            }
+
+            const res = await fetch(`${api}/student/${studentId}/dashboard`);
+            if (!res.ok) {
+                console.error("Dashboard API returned:", res.status, await res.text());
+                document.getElementById("msg").textContent = "Dashboard data not found.";
+                return;
+            }
+
+            const data = await res.json();
+
+            // عرض البيانات
+            document.getElementById("studentLevel").textContent = data.student?.level || "-";
+            document.getElementById("coursesCount").textContent = data.courses_count || 0;
+            document.getElementById("assignmentsCount").textContent = data.assignments_count || 0;
+
+            // جدول الكورسات
+            const ctbody = document.querySelector("#coursesTable tbody");
+            ctbody.innerHTML = "";
+            if (Array.isArray(data.courses) && data.courses.length) {
+                data.courses.forEach(c => {
+                    ctbody.innerHTML += `
+                        <tr>
+                            <td>${c.course_name}</td>
+                            <td>${c.department || ''}</td>
+                            <td>${c.assignments_count || 0}</td>
+                        </tr>`;
+                });
+            } else {
+                ctbody.innerHTML = `<tr><td colspan="3">No courses enrolled</td></tr>`;
+            }
+
+            // جدول الواجبات
+            const atbody = document.querySelector("#assignTable tbody");
+            atbody.innerHTML = "";
+            if (Array.isArray(data.assignments) && data.assignments.length) {
+                data.assignments.forEach(a => {
+                    const due = a.due_date ? new Date(a.due_date).toLocaleDateString() : "-";
+                    atbody.innerHTML += `
+                        <tr>
+                            <td>${a.title}</td>
+                            <td>${a.course_name || ''}</td>
+                            <td>${due}</td>
+                            <td>${a.total_mark || ''}</td>
+                        </tr>`;
+                });
+            } else {
+                atbody.innerHTML = `<tr><td colspan="4">No assignments</td></tr>`;
+            }
+
+        } catch (err) {
+            console.error("Error loading student dashboard:", err);
+            document.getElementById("msg").textContent = "Error loading dashboard: " + err.message;
+        }
+    }
+
+    function logout() { localStorage.clear(); window.location.href = "login.html"; }
+    </script>
+
+
+</body>
+</html>

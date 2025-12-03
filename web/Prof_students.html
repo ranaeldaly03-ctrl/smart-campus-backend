@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="Prof_students.css">
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="ProfessorName"></h2>
+            </li>
+            <li>
+                <a href="Prof_DaskBoard.html">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="generate_qr.html">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Generate QR</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="Prof_students.html">
+                    <i class="fas fa-user-group"></i>
+                    <p>Students</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_courses.html">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+             <li><a href="prof_assigment.html"><i class="far fa-edit"></i><p>Assignments</p></a></li>
+            <li>
+                <a href="Prof_ads.html">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="Prof_schedule.html">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="login.html">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+
+    <div class="title-info">
+        <p>Students</p>
+    </div>
+
+    <div class="box">
+
+        <h3>Select Course</h3>
+        <select id="courseSelect">
+            <option value="">-- Choose a Course --</option>
+        </select>
+
+        <div id="studentsBox" style="display:none;">
+            <h3>Students</h3>
+            <select id="studentSelect">
+                <option value="">-- Choose Student --</option>
+            </select>
+        </div>
+
+        <div id="infoBox" style="display:none;">
+            <h3>Student Information</h3>
+
+            <p><strong>Present:</strong> <span id="present"></span></p>
+            <p><strong>Absent:</strong> <span id="absent"></span></p>
+
+            <h3>Assignments</h3>
+            <table id="gradeTable">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Grade</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+
+        </div>
+
+    </div>
+
+    </div>
+
+
+    <script>
+    const api = "http://127.0.0.1:5000";
+
+    // DOM
+    const courseSelect = document.getElementById("courseSelect");
+    const studentsBox = document.getElementById("studentsBox");
+    const studentSelect = document.getElementById("studentSelect");
+    const infoBox = document.getElementById("infoBox");
+
+    // ensure overview container exists
+    if (!document.getElementById("studentsTableContainer")) {
+    const div = document.createElement("div");
+    div.id = "studentsTableContainer";
+    div.style.marginTop = "16px";
+    div.innerHTML = `
+        <h3>Registered Students Overview</h3>
+        <table id="studentsOverviewTable" style="width:100%; border-collapse:collapse;">
+        <thead style="background:#bfd0e9">
+            <tr>
+            <th style="padding:8px">ID</th>
+            <th style="padding:8px">Name</th>
+            <th style="padding:8px">Present</th>
+            <th style="padding:8px">Absent</th>
+            <th style="padding:8px">Avg %</th>
+            <th style="padding:8px">Details</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+        </table>
+    `;
+    document.querySelector(".box").appendChild(div);
+    }
+
+    function fillProfile() {
+    const profName = localStorage.getItem("user_name");
+    const profImage = localStorage.getItem("user_image");
+    const profRole = localStorage.getItem("user_role");
+    if (!profName || profRole !== "Instructor") { window.location.href = "login.html"; return false; }
+    const nameEl = document.getElementById("ProfessorName");
+    if (nameEl) nameEl.textContent = profName;
+    const picEl = document.getElementById("profilePic");
+    if (picEl) {
+        if (profImage && profImage !== "null" && profImage !== "") picEl.src = `${api}/${profImage}`;
+        else picEl.src = `${api}/uploads/default.png`;
+    }
+    return true;
+    }
+
+    async function loadCourses() {
+    try {
+        const profId = localStorage.getItem("user_id");
+        const res = await fetch(`${api}/instructor/${profId}/courses`);
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        const json = await res.json();
+        const list = Array.isArray(json) ? json : (json.courses || json.data || json);
+        courseSelect.innerHTML = '<option value="">-- Choose a Course --</option>';
+        if (!list || list.length === 0) { courseSelect.innerHTML += '<option value="">(No courses found)</option>'; return; }
+        list.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.id ?? c.course_id;
+        opt.textContent = c.course_name ?? c.name ?? `Course ${opt.value}`;
+        courseSelect.appendChild(opt);
+        });
+    } catch (err) {
+        console.error("loadCourses error:", err);
+        alert("Error loading courses: " + (err.message || err));
+    }
+    }
+
+    courseSelect.addEventListener("change", async () => {
+    const courseId = courseSelect.value;
+    if (!courseId) {
+        document.querySelector("#studentsOverviewTable tbody").innerHTML = "";
+        studentsBox.style.display = "none";
+        return;
+    }
+    await showStudentsOverview(courseId);
+    });
+
+    async function showStudentsOverview(courseId) {
+    try {
+        // use the single efficient endpoint we added
+        const res = await fetch(`${api}/courses/${courseId}/students_overview`);
+        if (!res.ok) throw new Error(`Failed to load students (status ${res.status})`);
+        const json = await res.json();
+        const students = json.students || [];
+
+        if (!students.length) {
+        document.querySelector("#studentsOverviewTable tbody").innerHTML =
+            "<tr><td colspan='6' style='padding:8px'>No students found for this course.</td></tr>";
+        document.getElementById("studentsTableContainer").style.display = "block";
+        studentsBox.style.display = "none";
+        return;
+        }
+
+        // fetch grades for all students in parallel (if you want)
+        const studentsWithGrades = await Promise.all(students.map(async s => {
+        let grades = [];
+        try {
+            const gRes = await fetch(`${api}/student/${s.id}/grades/${courseId}`);
+            if (gRes.ok) {
+            const gjson = await gRes.json();
+            grades = Array.isArray(gjson) ? gjson : (gjson.grades || gjson);
+            }
+        } catch (e) { console.warn("grades fetch failed for", s.id, e); }
+        // compute avg%
+        let avgPercent = 0;
+        if (Array.isArray(grades) && grades.length > 0) {
+            let totalGot = 0, totalMax = 0;
+            grades.forEach(g => { totalGot += Number(g.grade || 0); totalMax += Number(g.total_grade || 0); });
+            if (totalMax > 0) avgPercent = Math.round((totalGot / totalMax) * 100);
+        }
+        return {...s, grades, avgPercent};
+        }));
+
+        // render
+        const tbody = document.querySelector("#studentsOverviewTable tbody");
+        tbody.innerHTML = "";
+        studentsWithGrades.forEach(st => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td style="padding:8px">${st.id}</td>
+            <td style="padding:8px">${st.name}</td>
+            <td style="padding:8px">${st.present_count ?? st.present ?? 0}</td>
+            <td style="padding:8px">${st.absent_count ?? st.absent ?? 0}</td>
+            <td style="padding:8px">${st.avgPercent ?? st.avgPercent ?? st.avgPercent}%</td>
+            <td style="padding:8px"><button class="details-btn" data-id="${st.id}">Show</button></td>
+        `;
+        tbody.appendChild(tr);
+
+        const detailsRow = document.createElement("tr");
+        detailsRow.style.display = "none";
+        detailsRow.innerHTML = `
+            <td colspan="6" style="padding:10px; background:#f6f9ff;">
+            <strong>Attendance:</strong> Present ${st.present_count ?? st.present ?? 0} — Absent ${st.absent_count ?? st.absent ?? 0} <br><br>
+            <strong>Grades:</strong>
+            <table style="width:100%; margin-top:8px; border-collapse:collapse;">
+                <thead style="background:#eef6ff;">
+                <tr><th style="padding:6px">Title</th><th style="padding:6px">Type</th><th style="padding:6px">Grade</th><th style="padding:6px">Total</th></tr>
+                </thead>
+                <tbody>
+                ${ (Array.isArray(st.grades) && st.grades.length>0) ? st.grades.map(g => `<tr><td style="padding:6px">${g.title}</td><td style="padding:6px">${g.type}</td><td style="padding:6px">${g.grade}</td><td style="padding:6px">${g.total_grade}</td></tr>`).join("") : `<tr><td colspan="4" style="padding:6px">No grades</td></tr>` }
+                </tbody>
+            </table>
+            </td>
+        `;
+        tbody.appendChild(detailsRow);
+
+        tr.querySelector(".details-btn").addEventListener("click", (e) => {
+            const btn = e.target;
+            if (detailsRow.style.display === "none") { detailsRow.style.display = "table-row"; btn.textContent = "Hide"; }
+            else { detailsRow.style.display = "none"; btn.textContent = "Show"; }
+        });
+        });
+
+        // fill studentSelect for individual view
+        studentSelect.innerHTML = '<option value="">-- Choose Student --</option>';
+        studentsWithGrades.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = s.name;
+        studentSelect.appendChild(opt);
+        });
+
+        // student select -> show info
+        studentSelect.onchange = () => {
+        const sid = studentSelect.value;
+        if (!sid) { infoBox.style.display = "none"; return; }
+        const found = studentsWithGrades.find(x => String(x.id) === String(sid));
+        if (found) {
+            document.getElementById("present").textContent = found.present_count ?? found.present ?? 0;
+            document.getElementById("absent").textContent = found.absent_count ?? found.absent ?? 0;
+            const tbodyGrades = document.querySelector("#gradeTable tbody");
+            tbodyGrades.innerHTML = "";
+            (found.grades || []).forEach(g => {
+            tbodyGrades.innerHTML += `<tr><td>${g.title}</td><td>${g.type}</td><td>${g.grade}</td><td>${g.total_grade}</td></tr>`;
+            });
+            infoBox.style.display = "block";
+        } else infoBox.style.display = "none";
+        };
+
+        studentsBox.style.display = "block";
+        document.getElementById("studentsTableContainer").style.display = "block";
+
+    } catch (err) {
+        console.error("showStudentsOverview error:", err);
+        alert("Error loading students overview: " + (err.message || err));
+    }
+    }
+
+    // init
+    document.addEventListener("DOMContentLoaded", async () => {
+    const ok = fillProfile();
+    if (!ok) return;
+    await loadCourses();
+    });
+    </script>
+
+
+
+
+
+
+
+
+</body>
+</html>
