@@ -14,13 +14,15 @@ import os, time, traceback
 
 
 dbconfig = {
-    "user": "DB_USER",
-    "password": "DB_PASS",
-    "host": "DB_HOST",
-    "database": "DB_NAME",
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASS"),
+    "host": os.getenv("DB_HOST"),
+    "database": os.getenv("DB_NAME"),
+    "port": int(os.getenv("DB_PORT", "3306")),
     "raise_on_warnings": True,
     "autocommit": False
 }
+
 try:
     pool = pooling.MySQLConnectionPool(pool_name="mypool", pool_size=5, **dbconfig)
 except Exception as e:
@@ -3049,6 +3051,7 @@ def routes_debug():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
