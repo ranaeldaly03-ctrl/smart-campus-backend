@@ -14,10 +14,10 @@ import os, time, traceback
 
 
 dbconfig = {
-    "user": "root",
-    "password": "",
-    "host": "127.0.0.1",
-    "database": "smart_campus_new",
+    "user": "DB_USER",
+    "password": "DB_PASS",
+    "host": "DB_HOST",
+    "database": "DB_NAME",
     "raise_on_warnings": True,
     "autocommit": False
 }
@@ -43,10 +43,10 @@ def allowed_file(filename):
 
 
 db = mysql.connector.connect(
-    host=os.getenv("DB_HOST", "localhost"),
-    user=os.getenv("DB_USER", "root"),
-    password=os.getenv("DB_PASS", ""),
-    database=os.getenv("DB_NAME", "smart_campus_new")
+    host=os.getenv("DB_HOST"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASS"),
+    database=os.getenv("DB_NAME")
 )
 
 cursor = db.cursor(dictionary=True)
@@ -3048,4 +3048,5 @@ def routes_debug():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
