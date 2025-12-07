@@ -2,5 +2,7 @@ Flask
 flask-cors
 mysql-connector-python
 qrcode
+gunicorn
 Pillow
+
 
