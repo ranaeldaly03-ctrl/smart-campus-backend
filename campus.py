@@ -4912,10 +4912,7 @@ def open_box(id):
  
 
 
-if __name__ == '__main__':
-    # app.run(debug=True)
-    # app.run(host="0.0.0.0", port=5000)
-    # socketio.run(app, debug=True)
+if __name__ == "__main__":
     socketio.run(
         app,
         host="0.0.0.0",
@@ -4923,5 +4920,5 @@ if __name__ == '__main__':
         debug=False,
         allow_unsafe_werkzeug=True
     )
-    app.run(host="0.0.0.0", port=5000)
+    # app.run(host="0.0.0.0", port=5000)
 
