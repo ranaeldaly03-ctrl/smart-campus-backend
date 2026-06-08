@@ -4925,7 +4925,7 @@ def signup_page():
     return render_template("signup.html")
 
 
-@app.route("/add_user")
+@app.route("/addUser")
 def add_user_page():
     return render_template("addUser.html")
 
@@ -4969,8 +4969,8 @@ def prof_ads_page():
     return render_template("Prof_ads.html")
 
 
-@app.route("/prof_assignment")
-def prof_assignment_page():
+@app.route("/prof_assigment")
+def prof_assigment_page():
     return render_template("prof_assigment.html")
 
 
@@ -4979,23 +4979,23 @@ def prof_courses_page():
     return render_template("Prof_courses.html")
 
 
-@app.route("/prof_dashboard")
-def prof_dashboard_page():
+@app.route("/Prof_DaskBoard")
+def Prof_DaskBoard_page():
     return render_template("Prof_DaskBoard.html")
 
 
-@app.route("/prof_mid_final")
+@app.route("/prof_mid&final")
 def prof_mid_final_page():
     return render_template("prof_mid&final.html")
 
 
-@app.route("/prof_quiz_editor")
-def prof_quiz_editor_page():
+@app.route("/Prof_quiz_editor")
+def Prof_quiz_editor_page():
     return render_template("Prof_quiz_editor.html")
 
 
-@app.route("/cheating_logs")
-def cheating_logs_page():
+@app.route("/Prof_Proctoring")
+def Prof_Proctoring_page():
     return render_template("Prof_Proctoring.html")
 
 
@@ -5014,29 +5014,36 @@ def robot_page():
     return render_template("robot.html")
 
 
-@app.route("/student_ads")
-def student_ads_page():
-    return render_template("stu_ads.html")
 
-
-@app.route("/student_assignment")
-def student_assignment_page():
+@app.route("/stu_assigment")
+def stu_assigment_page():
     return render_template("stu_assigment.html")
 
 
-@app.route("/student_attendance")
-def student_attendance_page():
+@app.route("/stu_att")
+def stu_att_page():
     return render_template("stu_att.html")
 
 
-@app.route("/student_chat")
-def student_chat_page():
+@app.route("/stu_chat")
+def stu_chat_page():
     return render_template("stu_chat.html")
 
 
-@app.route("/student_courses")
-def student_courses_page():
+@app.route("/stu_courses")
+def stu_courses_page():
     return render_template("stu_courses.html")
+
+
+
+@app.route("/stu_ads")
+def stu_ads_page():
+    return render_template("stu_ads.html")
+
+
+@app.route("/stu_schedule")
+def stu_schedule_page():
+    return render_template("stu_schedule.html")
 
 
 @app.route("/stu_dashboard")
@@ -5044,29 +5051,25 @@ def stu_dashboard():
     return render_template("stu_dashboard.html")
 
 
-@app.route("/student_degree")
-def student_degree_page():
+@app.route("/stu_deg")
+def stu_deg_page():
     return render_template("stu_deg.html")
 
 
-@app.route("/student_midterm")
-def student_midterm_page():
+@app.route("/stu_midterm")
+def stu_midterm_page():
     return render_template("stu_midterm.html")
 
 
-@app.route("/student_quiz")
-def student_quiz_page():
+@app.route("/stu_quiz")
+def stu_quiz_page():
     return render_template("stu_quiz.html")
 
 
-@app.route("/student_resources")
-def student_resources_page():
+@app.route("/stu_resources")
+def stu_resources_page():
     return render_template("stu_resources.html")
 
-
-@app.route("/student_schedule")
-def student_schedule_page():
-    return render_template("stu_schedule.html")
 
 
 @app.route("/student_course")
