@@ -1,3 +1,4 @@
+/* RESET */
 * {
   margin: 0;
   padding: 0;
@@ -24,8 +25,8 @@ body {
   left: 0;
   padding-top: 10px;
   box-shadow: 2px 0 10px rgba(0,0,0,0.08);
-  overflow-y: auto;
-  overflow-x: auto;
+  overflow-y:auto;
+  overflow-x:auto;
   transition: width 0.45s ease;
   z-index: 10;
 }
@@ -140,138 +141,180 @@ body {
 }
 
 /* shift content more when menu expanded */
-.menu:hover ~ .users,
-.menu:focus-within ~ .users {
+.menu:hover ~ .content,
+.menu:focus-within ~ .content {
   margin-left: 280px;
 }
 
-.title {
-  position: relative;   /* أو شيلي position خالص */
-  height: 56px;
+/* TITLE */
+.title-info {
   background: #bfd0e9;
+  padding: 12px 18px;
+  margin-top: 7px;
   border-radius: 10px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 14px;
-  padding: 0 18px;
-  box-shadow: 0 8px 20px rgba(17,34,54,0.06);
-  font-weight: 700;
-  color: #123145;
-  margin-bottom: 30px;   /* مسافة طبيعية تحت العنوان */
+  color: #1c2e46;
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
 }
 
+/* CONTAINERS */
 
-.users {
-  margin-left: 100px;
-  padding: 30px 40px 60px 40px;
-  min-height: 100vh;
-  transition: margin-left 0.45s ease;
-  min-height: calc(100vh - 160px);
-  box-sizing: border-box;
-  background: transparent;
+/* layout for statistic boxes inside .data-info */
+.data-info {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    flex-wrap: wrap;
 }
 
+.data-info .box {
+    background-color: #f0d78b;
+    height: 150px;
+    flex-basis: 150px;
+    flex-grow: 1;
+    border-radius: 8px;
 
-
-.name , .id , .email , .phone , .department , .role , .level , .pass , .image{
     display: flex;
     align-items: center;
-    padding: 4px;
-    padding-bottom: 10px;
+    justify-content: space-around;
+
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* أيقونة داخل البوكس */
+.data-info .box i {
+    font-size: 40px;
+    color: #4c3a15;   /* لون مناسب مع الخلفية */
+    padding: 12px;
+}
+
+/* النص */
+.data-info .box .data p {
+    font-size: 18px;
+    font-weight: 600;
+    color: #4c3a15;
+}
+
+.data-info .box .data span {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1c2e46;
+}
+
+
+/* select and controls */
+select {
+  padding: 10px;
+  border: 1px solid #d5e0ec;
+  border-radius: 8px;
+  margin-right: 10px;
+  background: white;
+}
+
+
+table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    border: 2px solid;
+    border-color: #b1c9ea;
+   
+}
+
+th , td{
+    padding: 10px;
+    border: 2px solid;
+    border-bottom: 1px splid;
+    border-color: #a7b8d1;
+}
+
+th{
+    background-color: #b7cae4;
+    color: #1c2e46;
     
 }
-
-input , select{
-    margin-bottom: 10px;
-    outline-color: #b1c9ea;
-    padding: 12px 5px;
-    border: none;
-    border-radius: 12px;
-    background: #e0e5ec;
-    box-shadow: inset 5px 5px 10px #b8bcc2 , inset -5px -5px 10px #ffffff;
-    outline: none;
-    font-size: 14px;
-    width: 250px;
+/* small helpers */
+.hidden {
+  display: none !important;
 }
 
-@keyframes glow{
-   0% { box-shadow: 0 0 5px #dede9e;}
-   50% { box-shadow: 0 0 15px #dede9e;}
-   100% { box-shadow: 0 0 5px #dede9e;}
- }
 
-input:focus {
-   background: #e0e5ec;
-   animation: glow 1.5s infinite ease-in-out;
-    outline: none;
- }
-
-label{
-    width: 100px;
+.assign-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px;
 }
 
-button{
-    width: 100px;
-    border: none;
-    border: 12px;
-    background: #e0e5ec;
-    box-shadow: 5px 5px 10px #b8bcc2 , -5px -5px 10px #ffffff;
-    cursor: pointer;
+.card {
+    width: 330px;
+    background: #ffffff;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: 0.3s ease;
+    border-left: 6px solid #4a76fd;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card.expired {
+    border-left-color: #d9534f;
+    background: #fff5f5;
+}
+
+.card h3 {
+    margin: 0 0 10px;
+    font-size: 22px;
+    color: #2b2b2b;
     font-weight: bold;
-    transition: 0.9s ease;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 30px;
-    margin-left: 100px;
-    height: 30px;
 }
 
-button:hover{
-   background-color: #b1c9ea;
+.card p {
+    margin: 6px 0;
+    font-size: 15px;
+    color: #444;
 }
 
-.back-link , .go-link{
-    display: flex;
-    color: #bca799;
-    gap: 15px;
-    margin-bottom: 10px;
-}
- 
-
-
-.msg{
-    color: azure;
-    text-align: center;
-    margin: 10px;
+.upload-label {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #333;
+    display: block;
 }
 
-a:hover{
-    color: #b1c9ea;
-    text-decoration: underline;
+.upload {
+    display: block;
+    margin-top: 5px;
 }
 
-input:focus {
-   background: #e0e5ec;
-   animation: glow 1.5s infinite ease-in-out;
-    outline: none;
- }
-
-
-/* نخلي users تتحرك مع السايد بار */
-.menu:hover ~ .users .title,
-.menu:focus-within ~ .users .title {
-  left: 280px;
-  right: 20px;
+.submit-btn {
+    margin-top: 12px;
+    padding: 10px 18px;
+    background: #4a76fd;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.2s;
 }
 
-/* الوضع الطبيعي لما السايد بار مقفول */
-/* .users {
-    margin-left: 100px !important;
-    transition: margin-left 0.45s ease;
-} */
+.submit-btn:hover {
+    background: #365ed8;
+}
 
-.menu:hover ~ .users,
-.menu:focus-within ~ .users {
-  margin-left: 280px;
+
+
+/* responsive */
+@media (max-width: 800px) {
+  .menu:hover { width: 220px; }
+  .menu { width: 70px; }
+  .content { margin-left: 90px; padding: 18px; }
+  .data-info { gap: 12px; }
+  .box { min-width: 160px; padding: 12px; }
 }

@@ -4917,7 +4917,186 @@ from flask import render_template
 @app.route("/")
 def home():
     return render_template("login.html")
+
+
+
+@app.route("/signup")
+def signup_page():
+    return render_template("signup.html")
+
+
+@app.route("/add_user")
+def add_user_page():
+    return render_template("addUser.html")
+
+
+@app.route("/admin")
+def admin_page():
+    return render_template("admin.html")
+
+
+@app.route("/admin_schedule")
+def admin_schedule_page():
+    return render_template("admin_schedule.html")
+
+
+@app.route("/chatbot")
+def chatbot_page():
+    return render_template("chatbot.html")
+
+
+@app.route("/cheating_logs")
+def cheating_logs_page():
+    return render_template("cheating_logs.html")
+
+
+# @app.route('/video_feed')
+# def video_feed():
+#     return Response(
+#         generate_frames(),
+#         mimetype='multipart/x-mixed-replace; boundary=frame'
+#     )
+
  
+@app.route("/courses_page")
+def courses_page():
+    return render_template("courses.html")
+
+
+@app.route("/generate_qr")
+def generate_qr_page():
+    return render_template("generate_qr.html")
+
+
+@app.route("/prof_ads")
+def prof_ads_page():
+    return render_template("Prof_ads.html")
+
+
+@app.route("/prof_assignment")
+def prof_assignment_page():
+    return render_template("prof_assigment.html")
+
+
+@app.route("/prof_courses")
+def prof_courses_page():
+    return render_template("Prof_courses.html")
+
+
+@app.route("/prof_dashboard")
+def prof_dashboard_page():
+    return render_template("Prof_DaskBoard.html")
+
+
+@app.route("/prof_mid_final")
+def prof_mid_final_page():
+    return render_template("prof_mid&final.html")
+
+
+@app.route("/prof_quiz_editor")
+def prof_quiz_editor_page():
+    return render_template("Prof_quiz_editor.html")
+
+
+@app.route("/cheating_logs")
+def cheating_logs_page():
+    return render_template("Prof_Proctoring.html")
+
+
+@app.route("/prof_schedule")
+def prof_schedule_page():
+    return render_template("Prof_schedule.html")
+
+
+@app.route("/prof_students")
+def prof_students_page():
+    return render_template("Prof_students.html")
+
+
+@app.route("/robot")
+def robot_page():
+    return render_template("robot.html")
+
+
+@app.route("/student_ads")
+def student_ads_page():
+    return render_template("stu_ads.html")
+
+
+@app.route("/student_assignment")
+def student_assignment_page():
+    return render_template("stu_assigment.html")
+
+
+@app.route("/student_attendance")
+def student_attendance_page():
+    return render_template("stu_att.html")
+
+
+@app.route("/student_chat")
+def student_chat_page():
+    return render_template("stu_chat.html")
+
+
+@app.route("/student_courses")
+def student_courses_page():
+    return render_template("stu_courses.html")
+
+
+@app.route("/student_dashboard")
+def student_dashboard_page():
+    return render_template("stu_dashboard.html")
+
+
+@app.route("/student_degree")
+def student_degree_page():
+    return render_template("stu_deg.html")
+
+
+@app.route("/student_midterm")
+def student_midterm_page():
+    return render_template("stu_midterm.html")
+
+
+@app.route("/student_quiz")
+def student_quiz_page():
+    return render_template("stu_quiz.html")
+
+
+@app.route("/student_resources")
+def student_resources_page():
+    return render_template("stu_resources.html")
+
+
+@app.route("/student_schedule")
+def student_schedule_page():
+    return render_template("stu_schedule.html")
+
+
+@app.route("/student_course")
+def student_course_page():
+    return render_template("student_course.html")
+
+
+@app.route("/student_requests")
+def student_requests_page():
+    return render_template("student_requests.html")    
+
+
+@app.route("/track")
+def track_page():
+    return render_template("track.html")
+
+
+@app.route("/users")
+def users_page():
+    return render_template("users.html")
+
+
+@app.route("/worker")
+def worker_page():
+    return render_template("worker.html")
+
 
 
 if __name__ == "__main__":

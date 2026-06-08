@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Track Order</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 30px;
+      background: #f4f7fb;
+    }
+
+    .box {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    button {
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      margin-top: 20px;
+      width: 100%;
+      background: #10B981;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>📦 Track Your Order</h1>
+
+<div class="box" id="statusBox">
+  Loading...
+</div>
+
+<script>
+
+const BASE = "http://192.168.1.11:5000";
+let currentOrderId = null;
+
+
+const role = localStorage.getItem("user_role");
+
+if (!role) {
+    window.location.href = "/";
+}
+
+
+// 🔥 يجيب آخر أوردر للمستخدم
+function loadStatus() {
+
+  fetch(BASE + "/robot/get_my_order")
+    .then(res => res.json())
+    .then(data => {
+
+      if (!data || data.length === 0) {
+        document.getElementById("statusBox").innerHTML = "No order";
+        return;
+      }
+
+      // ناخد آخر أوردر
+      const order = data[0];
+      currentOrderId = order.id;
+
+      let statusText = "";
+
+      if (order.status === "waiting") {
+        statusText = "🟡 Preparing your order";
+      }
+
+      if (order.status === "delivering") {
+        statusText = "🚀 Robot is on the way";
+      }
+
+      if (order.status === "arrived") {
+        statusText = `
+          🟢 Robot Arrived <br><br>
+          <button onclick="openBox()">🔓 Open Box</button>
+        `;
+      }
+
+      document.getElementById("statusBox").innerHTML = statusText;
+
+    });
+}
+
+
+// 🔓 فتح البوكس
+function openBox() {
+
+  fetch(BASE + "/robot/open_box/" + currentOrderId, {
+    method: "POST"
+  })
+  .then(() => {
+    alert("📦 Box Opened!");
+    loadStatus();
+  });
+}
+
+
+// تحديث كل 3 ثواني
+setInterval(loadStatus, 3000);
+
+// أول تشغيل
+loadStatus();
+
+</script>
+
+</body>
+</html>

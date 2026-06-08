@@ -1,3 +1,18 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    background-color: #fdfeff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -24,8 +39,7 @@ body {
   left: 0;
   padding-top: 10px;
   box-shadow: 2px 0 10px rgba(0,0,0,0.08);
-  overflow-y: auto;
-  overflow-x: auto;
+  overflow: hidden;
   transition: width 0.45s ease;
   z-index: 10;
 }
@@ -129,24 +143,12 @@ body {
   border-radius: 8px;
 }
 
-/* ===============================
-      CONTENT
-================================*/
-.content {
-  margin-left: 100px;
-  padding: 30px;
-  transition: margin-left 0.45s ease;
-  min-height: 100vh;
-}
 
-/* shift content more when menu expanded */
-.menu:hover ~ .users,
-.menu:focus-within ~ .users {
-  margin-left: 280px;
-}
-
-.title {
-  position: relative;   /* أو شيلي position خالص */
+.title{
+  position: fixed;
+  top: 18px;
+  left: 100px;                          /* aligns with collapsed sidebar */
+  right: 20px;
   height: 56px;
   background: #bfd0e9;
   border-radius: 10px;
@@ -157,23 +159,36 @@ body {
   box-shadow: 0 8px 20px rgba(17,34,54,0.06);
   font-weight: 700;
   color: #123145;
-  margin-bottom: 30px;   /* مسافة طبيعية تحت العنوان */
-}
-
-
-.users {
-  margin-left: 100px;
-  padding: 30px 40px 60px 40px;
-  min-height: 100vh;
-  transition: margin-left 0.45s ease;
-  min-height: calc(100vh - 160px);
+  z-index: 5;
+  transition: left 0.45s ease, width 0.45s ease;
   box-sizing: border-box;
-  background: transparent;
+}
+.enroll{
+    margin: 140px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    
+}
+
+.menu:hover ~ .enroll .title,
+.menu:focus-within ~ .enroll .title {
+  left: 280px;
+  right: 20px;
 }
 
 
 
-.name , .id , .email , .phone , .department , .role , .level , .pass , .image{
+.menu:hover ~ .enroll,
+.menu:focus-within ~ .content {
+  margin-left: 280px;
+}
+
+
+
+.courseId , .studentId {
     display: flex;
     align-items: center;
     padding: 4px;
@@ -181,7 +196,7 @@ body {
     
 }
 
-input , select{
+input {
     margin-bottom: 10px;
     outline-color: #b1c9ea;
     padding: 12px 5px;
@@ -231,13 +246,20 @@ button:hover{
    background-color: #b1c9ea;
 }
 
-.back-link , .go-link{
-    display: flex;
+
+a{
+    text-decoration: none;
     color: #bca799;
-    gap: 15px;
-    margin-bottom: 10px;
+    display: flex;
+    margin-left: 15px;
+    margin-top: 15px;
+    font-weight: bold;
 }
- 
+
+a:hover {
+    text-decoration: underline;
+    color: #b1c9ea;
+}
 
 
 .msg{
@@ -246,32 +268,3 @@ button:hover{
     margin: 10px;
 }
 
-a:hover{
-    color: #b1c9ea;
-    text-decoration: underline;
-}
-
-input:focus {
-   background: #e0e5ec;
-   animation: glow 1.5s infinite ease-in-out;
-    outline: none;
- }
-
-
-/* نخلي users تتحرك مع السايد بار */
-.menu:hover ~ .users .title,
-.menu:focus-within ~ .users .title {
-  left: 280px;
-  right: 20px;
-}
-
-/* الوضع الطبيعي لما السايد بار مقفول */
-/* .users {
-    margin-left: 100px !important;
-    transition: margin-left 0.45s ease;
-} */
-
-.menu:hover ~ .users,
-.menu:focus-within ~ .users {
-  margin-left: 280px;
-}

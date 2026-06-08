@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Requests</title>
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="adminName"></h2>
+            </li>
+            <li>
+                <a href="/admin">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="/users">
+                    <i class="fas fa-user-group"></i>
+                    <p>Users</p>
+                </a>
+            </li>
+
+            <li>
+                <a class="active" href="/student_requests">
+                    <i class="fas fa-user-check"></i>
+                    <p>Student Requests</p>
+                </a>
+            </li>
+
+            <li>
+                <a href="/courses">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="/admin_schedule">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+
+            <li>
+                <a href="/admin_gate">
+                    <i class="fas fa-torii-gate"></i>
+                    <p>Gate</p>
+                </a>
+            </li>
+            <li>
+                <a href="/gate_logs">
+                    <i class="fas fa-dungeon"></i>
+                    <p>gate_logs</p>
+                </a>
+            </li>
+            <li>
+                <a href="/register_card">
+                    <i class="fas fa-id-card"></i>
+                    <p>Cards</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="/">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="title-info">
+            <p>Student Requests</p>
+            <i class="fas fa-user-check"></i>
+        </div>
+
+        <table id="userTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Level</th>
+                    <th>Action</th>
+
+                </tr>
+            </thead>
+            <tbody id="requests"></tbody>
+        </table>
+  </div>
+
+    <script>
+        const api = "";
+
+        /* ================================
+        Auth Check + Profile Load
+        ================================ */
+        document.addEventListener("DOMContentLoaded", () => {
+            const name  = localStorage.getItem("user_name");
+            const role  = localStorage.getItem("user_role");
+            const image = localStorage.getItem("user_image");
+
+            if (!name || role !== "Admin") {
+                window.location.href = "/";
+                return;
+            }
+
+            document.getElementById("adminName").textContent = name;
+
+            const profilePic = document.getElementById("profilePic");
+            if (image && image !== "null" && image !== "") {
+                profilePic.src = `${api}/${image}`;
+            } else {
+                profilePic.src = `/uploads/admin.png`;
+            }
+
+            // ⬅️ نحمل الطلبات بعد التأكد من الأدمن
+            loadPendingStudents();
+        });
+
+
+        /* ================================
+        Load Pending Students
+        ================================ */
+        async function loadPendingStudents() {
+            try {
+                const res = await fetch(`${api}/admin/pending_students`);
+
+                console.log("STATUS:", res.status);
+
+                // نقرأ الرد كنص الأول (عشان لو Error HTML)
+                const rawText = await res.text();
+                console.log("RAW RESPONSE:", rawText);
+
+                if (!res.ok) {
+                    throw new Error("Server error: " + res.status);
+                }
+
+                const students = JSON.parse(rawText);
+
+                const tbody = document.getElementById("requests");
+                tbody.innerHTML = "";
+
+                if (!Array.isArray(students) || students.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align:center;">
+                                No pending requests
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                students.forEach(student => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${student.name}</td>
+                            <td>${student.email}</td>
+                            <td>${student.department}</td>
+                            <td>${student.level}</td>
+                            <td>
+                                <button onclick="approveStudent(${student.id})"
+                                        style="background:green;color:white;padding:5px 10px;">
+                                    Approve
+                                </button>
+                                <button onclick="rejectStudent(${student.id})"
+                                        style="background:red;color:white;padding:5px 10px;">
+                                    Reject
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+            } catch (error) {
+                console.error("LOAD ERROR:", error);
+                alert("❌ Failed to load pending students\nCheck console for details");
+            }
+        }
+
+
+        /* ================================
+        Approve Student
+        ================================ */
+        async function approveStudent(studentId) {
+            if (!confirm("Are you sure you want to approve this student?")) return;
+
+            try {
+                const res = await fetch(
+                    `${api}/admin/approve_student/${studentId}`,
+                    { method: "POST" }
+                );
+
+                const result = await res.json();
+                alert(result.message || "✅ Student approved");
+
+                loadPendingStudents();
+
+            } catch (error) {
+                console.error("APPROVE ERROR:", error);
+                alert("❌ Failed to approve student");
+            }
+        }
+
+
+        /* ================================
+        Reject Student (Delete)
+        ================================ */
+        async function rejectStudent(studentId) {
+            if (!confirm("⚠️ Rejecting will DELETE this student.\nAre you sure?")) return;
+
+            try {
+                const res = await fetch(
+                    `${api}/admin/reject_student/${studentId}`,
+                    { method: "POST" }
+                );
+
+                const result = await res.json();
+                alert(result.message || "❌ Student rejected");
+
+                loadPendingStudents();
+
+            } catch (error) {
+                console.error("REJECT ERROR:", error);
+                alert("❌ Failed to reject student");
+            }
+        }
+    </script>
+    <script src="{{ url_for('static', filename='notifications.js') }}"></script>
+
+</body>
+</html>

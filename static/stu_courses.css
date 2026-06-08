@@ -24,8 +24,8 @@ body {
   left: 0;
   padding-top: 10px;
   box-shadow: 2px 0 10px rgba(0,0,0,0.08);
-  overflow-y: auto;
-  overflow-x: auto;
+  overflow-y:auto;
+  overflow-x:auto;
   transition: width 0.45s ease;
   z-index: 10;
 }
@@ -129,9 +129,7 @@ body {
   border-radius: 8px;
 }
 
-/* ===============================
-      CONTENT
-================================*/
+
 .content {
   margin-left: 100px;
   padding: 30px;
@@ -140,138 +138,125 @@ body {
 }
 
 /* shift content more when menu expanded */
-.menu:hover ~ .users,
-.menu:focus-within ~ .users {
+.menu:hover ~ .content,
+.menu:focus-within ~ .content {
   margin-left: 280px;
 }
 
-.title {
-  position: relative;   /* أو شيلي position خالص */
-  height: 56px;
+/* TITLE */
+.title-info {
   background: #bfd0e9;
+  padding: 12px 18px;
+  margin-top: 7px;
   border-radius: 10px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 14px;
-  padding: 0 18px;
-  box-shadow: 0 8px 20px rgba(17,34,54,0.06);
-  font-weight: 700;
-  color: #123145;
-  margin-bottom: 30px;   /* مسافة طبيعية تحت العنوان */
+  color: #1c2e46;
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
 }
 
 
-.users {
-  margin-left: 100px;
-  padding: 30px 40px 60px 40px;
-  min-height: 100vh;
-  transition: margin-left 0.45s ease;
-  min-height: calc(100vh - 160px);
-  box-sizing: border-box;
-  background: transparent;
+/* COURSES GRID */
+.courses-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.course-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  text-align: center;
+  transition: 0.3s;
+  margin: 10px;
+}
+
+.course-card:hover {
+  transform: translateY(-5px);
+}
+
+.course-icon {
+  font-size: 35px;
+  color: #4c6b9f;
+}
+
+.course-card h3 {
+  margin: 10px 0;
+  color: #1c2e46;
+}
+
+.course-card button {
+  margin-top: 10px;
+  padding: 8px 15px;
+  border: none;
+  background: #4c6b9f;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.course-card button:hover {
+  background: #2b4d75;
 }
 
 
 
-.name , .id , .email , .phone , .department , .role , .level , .pass , .image{
-    display: flex;
-    align-items: center;
-    padding: 4px;
-    padding-bottom: 10px;
-    
+
+/* ===== FILES GRID ===== */
+.files-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
 }
 
-input , select{
-    margin-bottom: 10px;
-    outline-color: #b1c9ea;
-    padding: 12px 5px;
-    border: none;
-    border-radius: 12px;
-    background: #e0e5ec;
-    box-shadow: inset 5px 5px 10px #b8bcc2 , inset -5px -5px 10px #ffffff;
-    outline: none;
-    font-size: 14px;
-    width: 250px;
+/* ===== FILE CARD ===== */
+.file-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: 0.3s;
 }
 
-@keyframes glow{
-   0% { box-shadow: 0 0 5px #dede9e;}
-   50% { box-shadow: 0 0 15px #dede9e;}
-   100% { box-shadow: 0 0 5px #dede9e;}
- }
-
-input:focus {
-   background: #e0e5ec;
-   animation: glow 1.5s infinite ease-in-out;
-    outline: none;
- }
-
-label{
-    width: 100px;
+.file-card:hover {
+  transform: translateY(-5px);
 }
 
-button{
-    width: 100px;
-    border: none;
-    border: 12px;
-    background: #e0e5ec;
-    box-shadow: 5px 5px 10px #b8bcc2 , -5px -5px 10px #ffffff;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.9s ease;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 30px;
-    margin-left: 100px;
-    height: 30px;
+/* file title */
+.file-title {
+  font-weight: 600;
+  color: #1c2e46;
+  margin-bottom: 10px;
+  font-size: 14px;
 }
 
-button:hover{
-   background-color: #b1c9ea;
+/* open button */
+.open-btn {
+  display: inline-block;
+  padding: 6px 12px;
+  background: #4c6b9f;
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 13px;
+  transition: 0.3s;
 }
 
-.back-link , .go-link{
-    display: flex;
-    color: #bca799;
-    gap: 15px;
-    margin-bottom: 10px;
-}
- 
-
-
-.msg{
-    color: azure;
-    text-align: center;
-    margin: 10px;
+.open-btn:hover {
+  background: #2b4d75;
 }
 
-a:hover{
-    color: #b1c9ea;
-    text-decoration: underline;
-}
 
-input:focus {
-   background: #e0e5ec;
-   animation: glow 1.5s infinite ease-in-out;
-    outline: none;
- }
-
-
-/* نخلي users تتحرك مع السايد بار */
-.menu:hover ~ .users .title,
-.menu:focus-within ~ .users .title {
-  left: 280px;
-  right: 20px;
-}
-
-/* الوضع الطبيعي لما السايد بار مقفول */
-/* .users {
-    margin-left: 100px !important;
-    transition: margin-left 0.45s ease;
-} */
-
-.menu:hover ~ .users,
-.menu:focus-within ~ .users {
-  margin-left: 280px;
+/* responsive */
+@media (max-width: 800px) {
+  .menu:hover { width: 220px; }
+  .menu { width: 70px; }
+  .content { margin-left: 90px; padding: 18px; }
+  .data-info { gap: 12px; }
+  .box { min-width: 160px; padding: 12px; }
 }
