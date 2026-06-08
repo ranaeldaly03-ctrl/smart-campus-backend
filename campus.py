@@ -1891,7 +1891,7 @@ def get_cursor(dictionary=True):
             user="avnadmin",
             password=DB_PASSWORD,
             database="smart_campus_new",
-            port=27139
+            port=27139,
         )
     return db.cursor(dictionary=dictionary)
 
