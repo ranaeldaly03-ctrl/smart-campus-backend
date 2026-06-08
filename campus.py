@@ -3483,11 +3483,11 @@ def chatbot_ai():
 
 
 
-from flask import render_template
+# from flask import render_template
 
-@app.route('/chatbot')
-def chatbot_page():
-    return send_from_directory('web', 'chatbot.html')
+# @app.route('/chatbot')
+# def chatbot_page():
+#     return send_from_directory('web', 'chatbot.html')
 
 #----------------------------AI2------------------------
 
