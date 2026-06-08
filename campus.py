@@ -4552,21 +4552,21 @@ def start_conversation():
 
 
 @app.route("/conversation/<int:conversation_id>/mark_read", methods=["PUT"])
-def mark_as_read(conversation_id):
+def mark_as_read_chat(conversation_id):
     db = get_db()
     cur = db.cursor()
 
     cur.execute("""
         SELECT * FROM messages
         WHERE conversation_id = %s
-    """, (id,))
+    """, (conversation_id,))
 
-    messages = cur.fetchall()  # 🔥 مهم
+    messages = cur.fetchall()
 
-    cur.close()   # 🔥 اقفلي cursor
-    db.close()    # 🔥 اقفلي connection
+    cur.close()
+    db.close()
 
-    return jsonify(messages)           
+    return jsonify(messages)        
 
 
 def get_db():
