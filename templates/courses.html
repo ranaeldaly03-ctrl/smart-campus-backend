@@ -148,7 +148,7 @@
         });
 
     async function loadCourses() {
-      const res = await fetch(`${api}/courses`);
+      const res = await fetch(`${api}/courses_data`);
       const data = await res.json();
 
       const tbody = document.querySelector("#courses tbody");

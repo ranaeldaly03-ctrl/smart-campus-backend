@@ -408,7 +408,7 @@ def student_signup():
 
 # في ملف campus.py (أو الملف اللي بتشغلي منه Flask) — استبدلي دالة get_courses الحالية بالآتي:
 
-@app.route('/courses', methods=['GET'])
+@app.route('/courses_data', methods=['GET'])
 def get_courses():
     try:
         cursor = db.cursor(dictionary=True)
