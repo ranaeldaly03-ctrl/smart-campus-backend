@@ -1,1 +1,1 @@
-web: python campus.py
+web: gunicorn campus:app
