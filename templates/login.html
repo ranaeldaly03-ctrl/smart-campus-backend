@@ -58,11 +58,11 @@ async function loginUser() {
 
             // تحويل حسب الدور
             if (data.role === "Admin") {
-                window.location.href = "admin.html";
+                window.location.href = "/admin";
             } else if (data.role === "Student") {
-                window.location.href = "stu_dashboard.html";
+                window.location.href = "/stu_dashboard";
             } else if (data.role === "Instructor") {
-                window.location.href = "Prof_DaskBoard.html";
+                window.location.href = "/Prof_DaskBoard";
             }
         } else {
             msg.style.color = "red";
