@@ -552,6 +552,8 @@ def get_grades(student_id):
 @app.route('/login', methods=['POST'])
 def login():
     try:
+        db = get_db()   # ← أضيفي السطر ده
+
         data = request.get_json()
         user_id = data.get('id')
         password = data.get('password')
@@ -560,23 +562,28 @@ def login():
             return jsonify({"status": "error", "message": "Missing ID or password"}), 400
 
         cursor = db.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+
+        cursor.execute(
+            "SELECT * FROM users WHERE id = %s",
+            (user_id,)
+        )
+
         user = cursor.fetchone()
+
+        cursor.close()
+        db.close()
 
         if not user:
             return jsonify({"status": "error", "message": "User not found"}), 404
 
-        # ✅ التحقق من كلمة المرور
         if user["pass"] == password:
 
-            # 🔴 هنا بقى نحط شرط الـ approval
             if user["role"] == "Student" and user.get("status") != "active":
                 return jsonify({
                     "status": "error",
                     "message": "⏳ Waiting for admin approval"
                 }), 403
 
-            # ✅ لو كله تمام
             return jsonify({
                 "status": "ok",
                 "role": user["role"],
@@ -585,13 +592,17 @@ def login():
                 "image": user["image"]
             }), 200
 
-        else:
-            return jsonify({"status": "error", "message": "Invalid password"}), 401
+        return jsonify({
+            "status": "error",
+            "message": "Invalid password"
+        }), 401
 
     except Exception as e:
         print("Error in login:", e)
-        return jsonify({"status": "error", "message": "Server error"}), 500
-
+        return jsonify({
+            "status": "error",
+            "message": "Server error"
+        }), 500
 
 
 
