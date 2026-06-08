@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Worker Panel</title>
+
+  <style>
+    body {
+      font-family: 'Segoe UI';
+      background: #f4f7fb;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2E86AB;
+    }
+
+    .order {
+      background: white;
+      padding: 15px;
+      border-radius: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .btn {
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      margin-top: 10px;
+      width: 100%;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .ready {
+      background: #10B981;
+      color: white;
+    }
+
+    .open {
+      background: #3B82F6;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>☕ Worker Panel</h1>
+
+  <div id="orders">Loading...</div>
+
+</div>
+
+<script>
+
+    const BASE = "http://192.168.1.10:5000";
+
+    // ✅ تجيب كل الأوردرات waiting
+    function loadOrders() {
+
+    fetch(BASE + "/robot/get_order")
+        .then(res => res.json())
+        .then(data => {
+
+        const container = document.getElementById("orders");
+        container.innerHTML = "";
+
+        if (!data || data.length === 0) {
+            container.innerHTML = "<p>No waiting orders 😴</p>";
+            return;
+        }
+
+        data.forEach(order => {
+
+            let color = "#ccc";
+            let text = "";
+
+            if (order.status === "waiting") {
+                color = "#f59e0b";
+                text = "🟡 Waiting";
+            }
+
+            if (order.status === "delivering") {
+                color = "#3b82f6";
+                text = "🔵 On The Way";
+            }
+
+            const div = document.createElement("div");
+            div.className = "order";
+
+            div.innerHTML = `
+                <b>Item:</b> ${order.item} <br>
+
+                <b>Status:</b> 
+                <span style="color:${color}; font-weight:bold">
+                ${text}
+                </span><br><br>
+
+                ${
+                order.status === "waiting"
+                    ? `<button class="btn ready" onclick="startDelivery(${order.id})">
+                        🚀 Start Delivery
+                    </button>`
+                    : ""
+                }
+            `;
+
+            container.appendChild(div);
+            });
+
+        });
+    }
+
+
+    // 🚀 يبدأ التوصيل
+    function startDelivery(id) {
+
+    fetch(BASE + "/robot/close_box/" + id, {
+        method: "POST"
+    })
+    .then(() => {
+        alert("🚀 Delivery Started");
+        loadOrders(); // ✅ صح
+    });
+    }
+
+
+    // 🔄 تحديث كل 3 ثواني
+    setInterval(loadOrders, 3000);
+
+    // أول تشغيل
+    loadOrders();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="users.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <title>Admin Gate</title>
+</head>
+<body>
+
+<div class="menu">
+  <ul>
+    <li class="profile">
+      <div class="img-box">
+        <img id="profilePic" src="" alt="profile">
+      </div>
+      <h2 id="adminName"></h2>
+    </li>
+
+    <li><a href="admin.html"><i class="fas fa-home"></i><p>Dashboard</p></a></li>
+    <li><a href="users.html"><i class="fas fa-user-group"></i><p>Users</p></a></li>
+    <li>
+        <a href="student_requests.html">
+          <i class="fas fa-user-check"></i>
+          <p>Student Requests</p>
+        </a>
+    </li>
+    <li><a href="courses.html"><i class="fa fa-list-alt"></i><p>Courses</p></a></li>
+    <li><a href="admin_schedule.html"><i class="fas fa-table"></i><p>Tables</p></a></li>
+
+    <li>
+      <a class="active" href="admin_gate.html">
+        <i class="fas fa-torii-gate"></i>
+        <p>Gate</p>
+      </a>
+    </li>
+    <li>
+                <a href="gate_logs.html">
+                    <i class="fas fa-dungeon"></i>
+                    <p>gate_logs</p>
+                </a>
+            </li>
+            <li>
+                <a href="register_card.html">
+                    <i class="fas fa-id-card"></i>
+                    <p>Cards</p>
+                </a>
+            </li>
+
+    <li class="log-out">
+      <a href="login.html"><i class="fas fa-sign-out"></i><p>Log Out</p></a>
+    </li>
+  </ul>
+</div>
+
+<div class="users">
+  <div class="title_info">
+      <i class="fas fa-torii-gate"></i>
+      <h1 class="user">Policy</h1>
+  </div>
+  <div class="container">
+    <div class="panel">
+
+      <div class="policy-list">
+        <label><input type="radio" name="policy" value="id_only"> ID only</label><br>
+        <label><input type="radio" name="policy" value="term1_paid"> Term1 paid</label><br>
+        <label><input type="radio" name="policy" value="term1_and_term2_paid"> Term1 & Term2 paid</label>
+      </div>
+
+      <div class="controls">
+        <button id="saveBtn" class="btn">Save Policy</button>
+        <button id="refreshBtn" class="btn secondary">Load Current Policy</button>
+        <div id="currentMode"></div>
+      </div>
+
+      <div id="msg" class="message"></div>
+
+      <hr>
+
+      <h3>Test</h3>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <input id="test_student_id" placeholder="student_id">
+        <select id="test_term">
+          <option value="term1">term1</option>
+          <option value="term2">term2</option>
+        </select>
+        <button id="testBtn" class="btn">Test</button>
+      </div>
+
+      <pre id="testResult"></pre>
+
+      <hr>
+
+      <h2>Override Student Access</h2>
+
+      <input type="text" id="studentId" placeholder="Student ID">
+
+      <select id="status">
+          <option value="1">Force Allow</option>
+          <option value="0">Force Block</option>
+          <option value="remove">Remove Override (Use Policy)</option>
+      </select>
+
+      <button onclick="updateStatus()">Update</button>
+
+    </div>
+  </div>
+</div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:5000";
+
+    // ===== Auth check =====
+    document.addEventListener("DOMContentLoaded", () => {
+      const name = localStorage.getItem("user_name");
+      const role = localStorage.getItem("user_role");
+      const image = localStorage.getItem("user_image");
+
+      if (!name || role !== "Admin") {
+        window.location.href = "login.html";
+        return;
+      }
+
+      document.getElementById("adminName").textContent = name;
+      document.getElementById("profilePic").src =
+        image ? `${API_BASE}/${image}` : `${API_BASE}/uploads/admin.png`;
+
+      loadPolicy();
+    });
+
+    // ===== Helpers =====
+    const msg = document.getElementById("msg");
+    const currentModeDiv = document.getElementById("currentMode");
+
+    function showMsg(text, ok=true){
+      msg.textContent = text;
+      msg.style.color = ok ? "green" : "red";
+    }
+
+    function getSelectedPolicy(){
+      const r = document.querySelector("input[name='policy']:checked");
+      return r ? r.value : null;
+    }
+
+    function selectPolicy(value){
+      document.querySelectorAll("input[name='policy']").forEach(r => {
+        r.checked = (r.value === value);
+      });
+    }
+
+    // ===== Load Policy =====
+    async function loadPolicy(){
+      try{
+        const res = await fetch(`${API_BASE}/gate_policy`);
+        const data = await res.json();
+        if(data.mode){
+          selectPolicy(data.mode);
+          currentModeDiv.textContent = "Current policy: " + data.mode;
+        } else {
+          currentModeDiv.textContent = "No policy set";
+        }
+      }catch{
+        showMsg("❌ Failed to load policy", false);
+      }
+    }
+
+    // ===== Save Policy =====
+    document.getElementById("saveBtn").onclick = async () => {
+      const mode = getSelectedPolicy();
+      if(!mode){
+        showMsg("Select a policy first", false);
+        return;
+      }
+
+      const res = await fetch(`${API_BASE}/gate_policy`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ mode })
+      });
+
+      const data = await res.json();
+      if(res.ok){
+        showMsg("✅ Policy saved");
+        currentModeDiv.textContent = "Current policy: " + data.mode;
+      } else {
+        showMsg("❌ Error saving", false);
+      }
+    };
+
+    // ===== Test Gate =====
+    document.getElementById("testBtn").onclick = async () => {
+      const student_id = document.getElementById("test_student_id").value;
+      const term = document.getElementById("test_term").value;
+
+      const res = await fetch(`${API_BASE}/check_access`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ student_id, term })
+      });
+
+      const data = await res.json();
+      document.getElementById("testResult").textContent =
+        JSON.stringify(data, null, 2);
+    };
+
+    function updateStatus() {
+
+    let studentId = document.getElementById("studentId").value;
+    let override = document.getElementById("override").value;
+
+    fetch(`${API_BASE}/update_override`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            student_id: studentId,
+            override_access: override
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Override updated successfully");
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Error updating override");
+    });
+}
+  </script>
+
+</body>
+</html>

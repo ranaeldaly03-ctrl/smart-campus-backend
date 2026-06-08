@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='addUser.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <title>Register RFID Card</title>
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+            <div class="img-box">
+                <img id="profilePic" src="" alt="profile">
+            </div>
+            <h2 id="adminName"></h2>
+            </li>
+
+            <li><a href="admin.html"><i class="fas fa-home"></i><p>Dashboard</p></a></li>
+            <li><a href="users.html"><i class="fas fa-user-group"></i><p>Users</p></a></li>
+            <li>
+                <a href="student_requests.html">
+                <i class="fas fa-user-check"></i>
+                <p>Student Requests</p>
+                </a>
+            </li>
+            <li><a href="courses.html"><i class="fa fa-list-alt"></i><p>Courses</p></a></li>
+            <li><a href="admin_schedule.html"><i class="fas fa-table"></i><p>Tables</p></a></li>
+
+            <li>
+            <a href="admin_gate.html">
+                <i class="fas fa-torii-gate"></i>
+                <p>Gate</p>
+            </a>
+            </li>
+            <li>
+                <a href="gate_logs.html">
+                    <i class="fas fa-dungeon"></i>
+                    <p>gate_logs</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="register_card.html">
+                    <i class="fas fa-id-card"></i>
+                    <p>Cards</p>
+                </a>
+            </li>
+
+            <li class="log-out">
+            <a href="login.html"><i class="fas fa-sign-out"></i><p>Log Out</p></a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="users">
+        <div class="title">
+            <i class="fas fa-users"></i>
+            <h1 class="user">RFID Card</h1>
+        </div>
+        <input type="text" id="studentId" placeholder="Student ID">
+        <button onclick="registerCard()">Wait for the card</button>
+    </div>
+
+
+
+
+    <script>
+        const API_BASE = "http://127.0.0.1:5000";
+
+        // ===== Auth check =====
+        document.addEventListener("DOMContentLoaded", () => {
+        const name = localStorage.getItem("user_name");
+        const role = localStorage.getItem("user_role");
+        const image = localStorage.getItem("user_image");
+
+        if (!name || role !== "Admin") {
+            window.location.href = "login.html";
+            return;
+        }
+
+        document.getElementById("adminName").textContent = name;
+        document.getElementById("profilePic").src =
+            image ? `${API_BASE}/${image}` : `${API_BASE}/uploads/admin.png`;
+
+        loadPolicy();
+        });
+        function registerCard() {
+
+            let studentId = document.getElementById("studentId").value;
+
+            fetch("/start_registration", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    student_id: studentId
+                })
+            })
+            .then(res => res.json())
+            .then(result => {
+                alert("ضع الكارت الآن...");
+            });
+        }
+
+    </script>
+
+</body>
+</html>

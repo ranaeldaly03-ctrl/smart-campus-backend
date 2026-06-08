@@ -1,0 +1,5 @@
+﻿id,name,email,pass,phone,department,role,level,image
+1,Admin 1,admin1@example.com,1234,0100000000,Electronics,Admin,,uploads/admin.png
+2,Student 1,student1@example.com,1234,0101111111,Electronics,Student,1,uploads/student.png
+3,Instructor 1,inst1@example.com,1234,0102222222,Electronics,Instructor,,uploads/prof_def.jpg
+4,Stusent 2,student2@example.com,1234,103333333,Electronics,Student,2,uploads/student.png

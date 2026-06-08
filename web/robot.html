@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="robot.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusBot</title>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>CampusBot 🤖</h1>
+
+  <div class="section">
+    <h3>Select Item</h3>
+
+    <div class="buttons">
+      <button onclick="selectItem(this, 'water')">💧 Water</button>
+      <button onclick="selectItem(this, 'coffee')">☕ Coffee</button>
+      <button onclick="selectItem(this, 'snack')">🍔 Snack</button>
+      <button onclick="selectItem(this, 'documents')">📄 Docs</button>
+    </div>
+
+    <p id="selected">Selected: none</p>
+  </div>
+
+  <div class="section">
+    <button class="primary-btn" onclick="getLocation()">📍 Get Location</button>
+
+    <div class="location-box" id="location">No location</div>
+  </div>
+
+  <div class="section">
+    <button class="primary-btn success" onclick="sendOrder()">🚀 Send Order</button>
+  </div>
+
+</div>
+
+  <script>
+    let item = "";
+    let lat = null;
+    let lon = null;
+
+    function selectItem(btn, i) {
+        item = i;
+
+        document.querySelectorAll(".buttons button").forEach(b => {
+            b.classList.remove("active");
+        });
+
+        btn.classList.add("active");
+
+        document.getElementById("selected").innerText = "Selected: " + i;
+    }
+
+    function getLocation() {
+
+        if (!navigator.geolocation) {
+            alert("Geolocation مش مدعوم");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+            lat = pos.coords.latitude;
+            lon = pos.coords.longitude;
+
+            console.log("✅ LOCATION:", lat, lon);
+
+            document.getElementById("location").innerText =
+                "Lat: " + lat + " Lon: " + lon;
+            },
+
+            function(error) {
+            console.log("❌ ERROR:", error);
+
+            alert("مش واخد صلاحية location أو في مشكلة");
+
+            }
+        );
+        }
+
+    function sendOrder() {
+
+      if (!item) {
+        alert("اختاري حاجة الأول");
+        return;
+      }
+
+      if (!lat) {
+        alert("اعملي location الأول");
+        return;
+      }
+
+      fetch("http://192.168.1.10:5000/robot/order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          item: item,
+          lat: lat,
+          lon: lon
+        })
+      })
+      .then(res => res.text())
+      .then(data => {
+        alert("Order Sent ✅");
+        console.log(data);
+      })
+      .catch(err => {
+        alert("Error ❌");
+        console.log(err);
+      });
+    }
+  </script>
+
+<!-- <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaK_ns1UxAQizDqPpuc_dX8HO1YpZRm7o&callback=initMap" async defer></script> -->
+</body>
+</html>

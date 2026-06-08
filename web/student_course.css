@@ -1,0 +1,270 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    background-color: #fdfeff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #f3f6fa;
+  color: #1c2e46;
+  min-height: 100vh;
+}
+
+/* ===============================
+      SIDEBAR (نفس الهيكل + الألوان الجديدة)
+================================*/
+.menu {
+  width: 80px;
+  height: 100vh;
+  background-color: #bfd0e9; /* اللون الأزرق الفاتح */
+  color: #1c2e46;
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding-top: 10px;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.08);
+  overflow: hidden;
+  transition: width 0.45s ease;
+  z-index: 10;
+}
+
+.menu:hover {
+  width: 260px;
+}
+
+/* list */
+.menu ul {
+  list-style: none;
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.menu ul li {
+  padding: 12px 8px;
+  border-bottom: 1px solid #d5e0ec;
+  position: relative;
+}
+
+/* profile block */
+.profile {
+  text-align: center;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+}
+
+.profile .img-box img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid #4c6b9f;
+  object-fit: cover;
+  display: inline-block;
+  transition: transform .3s;
+}
+
+.menu:hover .profile .img-box img {
+  width: 80px;
+  height: 80px;
+}
+
+/* links */
+.menu ul li a {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px;
+  margin: 4px 6px;
+  border-radius: 8px;
+  transition: background-color .25s, color .25s, transform .25s;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* icon only state: hide text when collapsed */
+.menu ul li a i {
+  min-width: 28px;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* label paragraph inside link */
+.menu ul li a p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity .3s, transform .3s;
+}
+
+/* show labels on hover */
+.menu:hover ul li a p {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* active & hover styles */
+.menu ul li a.active,
+.menu ul li a:hover {
+  background-color: #e6eefb;
+  color: #2b4d75;
+  box-shadow: 0 2px 6px rgba(43,77,117,0.06);
+}
+
+/* special log-out at bottom */
+.log-out{
+  margin-top: auto;
+  padding-bottom: 18px;
+}
+
+.log-out a{
+  background-color:#a7b8d1;
+  border-radius: 8px;
+}
+
+
+.title{
+  position: fixed;
+  top: 18px;
+  left: 100px;                          /* aligns with collapsed sidebar */
+  right: 20px;
+  height: 56px;
+  background: #bfd0e9;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 18px;
+  box-shadow: 0 8px 20px rgba(17,34,54,0.06);
+  font-weight: 700;
+  color: #123145;
+  z-index: 5;
+  transition: left 0.45s ease, width 0.45s ease;
+  box-sizing: border-box;
+}
+.enroll{
+    margin: 140px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    
+}
+
+.menu:hover ~ .enroll .title,
+.menu:focus-within ~ .enroll .title {
+  left: 280px;
+  right: 20px;
+}
+
+
+
+.menu:hover ~ .enroll,
+.menu:focus-within ~ .content {
+  margin-left: 280px;
+}
+
+
+
+.courseId , .studentId {
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    padding-bottom: 10px;
+    
+}
+
+input {
+    margin-bottom: 10px;
+    outline-color: #b1c9ea;
+    padding: 12px 5px;
+    border: none;
+    border-radius: 12px;
+    background: #e0e5ec;
+    box-shadow: inset 5px 5px 10px #b8bcc2 , inset -5px -5px 10px #ffffff;
+    outline: none;
+    font-size: 14px;
+    width: 250px;
+}
+
+@keyframes glow{
+   0% { box-shadow: 0 0 5px #dede9e;}
+   50% { box-shadow: 0 0 15px #dede9e;}
+   100% { box-shadow: 0 0 5px #dede9e;}
+ }
+
+input:focus {
+   background: #e0e5ec;
+   animation: glow 1.5s infinite ease-in-out;
+    outline: none;
+ }
+
+label{
+    width: 100px;
+}
+
+button{
+    width: 100px;
+    border: none;
+    border: 12px;
+    background: #e0e5ec;
+    box-shadow: 5px 5px 10px #b8bcc2 , -5px -5px 10px #ffffff;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.9s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+    margin-left: 100px;
+    height: 30px;
+}
+
+button:hover{
+   background-color: #b1c9ea;
+}
+
+
+a{
+    text-decoration: none;
+    color: #bca799;
+    display: flex;
+    margin-left: 15px;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: #b1c9ea;
+}
+
+
+.msg{
+    color: azure;
+    text-align: center;
+    margin: 10px;
+}
+
