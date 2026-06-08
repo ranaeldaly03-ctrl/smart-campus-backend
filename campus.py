@@ -4945,10 +4945,6 @@ def chatbot_page():
     return render_template("chatbot.html")
 
 
-@app.route("/cheating_logs")
-def cheating_logs_page():
-    return render_template("cheating_logs.html")
-
 
 # @app.route('/video_feed')
 # def video_feed():
