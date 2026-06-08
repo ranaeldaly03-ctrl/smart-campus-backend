@@ -24,11 +24,14 @@ from ai.quiz_ai import generate_mcq
 from flask_socketio import SocketIO, emit, join_room 
 
 
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
+
 dbconfig = {
-    "user": "root",
-    "password": "",
-    "host": "127.0.0.1",
+    "user": "avnadmin",
+    "password": DB_PASSWORD,
+    "host": "mysql-26b19251-ranaeldaly03-48a8.g.aivencloud.com",
     "database": "smart_campus_new",
+    "port": 27139,
     "raise_on_warnings": True,
     "autocommit": False
 }
@@ -57,10 +60,11 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 db = mysql.connector.connect(
-    host='localhost',       #os.getenv("DB_HOST")
-    user= 'root',
-    password='',
-    database='smart_campus_new'
+    host='mysql-26b19251-ranaeldaly03-48a8.g.aivencloud.com',
+    user='avnadmin',
+    password=DB_PASSWORD,
+    database='smart_campus_new',
+    port=27139
 )
 
 cursor = db.cursor(dictionary=True)
@@ -1883,7 +1887,11 @@ def get_cursor(dictionary=True):
     except Exception:
         # recreate connection if needed (تعدلي بيانات الاتصال هنا لو مختلفة)
         db = mysql.connector.connect(
-            host='localhost', user='root', password='', database='smart_campus_new'
+            host="mysql-26b19251-ranaeldaly03-48a8.g.aivencloud.com",
+            user="avnadmin",
+            password=DB_PASSWORD
+            database="smart_campus_new",
+            port=27139
         )
     return db.cursor(dictionary=dictionary)
 
@@ -4518,10 +4526,11 @@ def get_messages(id):
 def get_db():
     import mysql.connector
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="smart_campus_new"
+        host="mysql-26b19251-ranaeldaly03-48a8.g.aivencloud.com",
+        user="avnadmin",
+        password=DB_PASSWORD,
+        database="smart_campus_new",
+        port=27139
     )
 
 @app.route('/student/<int:student_id>/instructors')
@@ -4723,10 +4732,11 @@ def handle_send_message(data):
     import mysql.connector
 
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="smart_campus_new"
+        host="mysql-26b19251-ranaeldaly03-48a8.g.aivencloud.com",
+        user="avnadmin",
+        password=DB_PASSWORD,
+        database="smart_campus_new",
+        port=27139
     )
 
     cur = db.cursor()

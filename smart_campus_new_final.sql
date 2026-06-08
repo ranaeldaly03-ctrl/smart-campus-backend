@@ -28,11 +28,15 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `ads` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `instructor_id` int(11) NOT NULL,
   `course_id` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `text` text DEFAULT NULL
+  `text` text DEFAULT NULL,
+
+  PRIMARY KEY (`id`),
+  KEY `instructor_id` (`instructor_id`),
+  KEY `course_id` (`course_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -51,7 +55,7 @@ INSERT INTO `ads` (`id`, `instructor_id`, `course_id`, `created_at`, `text`) VAL
 --
 
 CREATE TABLE `assignment` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `course_id` int(11) DEFAULT NULL,
   `title` varchar(100) DEFAULT NULL,
   `description` text DEFAULT NULL,
@@ -64,7 +68,10 @@ CREATE TABLE `assignment` (
   `question_count` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
   `file_path` varchar(512) DEFAULT NULL,
-  `published` tinyint(1) DEFAULT 0
+  `published` tinyint(1) DEFAULT 0,
+
+  PRIMARY KEY (`id`),
+  KEY `course_id` (`course_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -87,14 +94,16 @@ INSERT INTO `assignment` (`id`, `course_id`, `title`, `description`, `start_time
 --
 
 CREATE TABLE `assignment_submissions` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `assignment_id` int(11) DEFAULT NULL,
   `student_id` int(11) DEFAULT NULL,
   `original_filename` varchar(255) DEFAULT NULL,
   `file_path` varchar(500) DEFAULT NULL,
   `uploaded_at` datetime DEFAULT NULL,
   `locked` tinyint(1) NOT NULL DEFAULT 1,
-  `grade` int(11) DEFAULT NULL
+  `grade` int(11) DEFAULT NULL,
+
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -112,13 +121,19 @@ INSERT INTO `assignment_submissions` (`id`, `assignment_id`, `student_id`, `orig
 --
 
 CREATE TABLE `attendance` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `student_id` int(11) NOT NULL,
   `course_id` int(11) NOT NULL,
   `date` date NOT NULL,
   `status` enum('Present','Absent') DEFAULT 'Present',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `session_id` int(11) DEFAULT NULL
+  `session_id` int(11) DEFAULT NULL,
+
+  PRIMARY KEY (`id`),
+  KEY `idx_attendance_student` (`student_id`),
+  KEY `idx_attendance_course` (`course_id`),
+  KEY `idx_attendance_date` (`date`),
+  KEY `session_id` (`session_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -145,7 +160,7 @@ INSERT INTO `attendance` (`id`, `student_id`, `course_id`, `date`, `status`, `cr
 --
 
 CREATE TABLE `attendance_sessions` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `course_id` int(11) NOT NULL,
   `started_by` int(11) NOT NULL,
   `start_time` datetime NOT NULL DEFAULT current_timestamp(),
@@ -153,7 +168,11 @@ CREATE TABLE `attendance_sessions` (
   `active` tinyint(1) DEFAULT 1,
   `note` varchar(255) DEFAULT NULL,
   `session_code` varchar(20) DEFAULT NULL,
-  `is_active` tinyint(1) DEFAULT 1
+  `is_active` tinyint(1) DEFAULT 1,
+
+  PRIMARY KEY (`id`),
+  KEY `course_id` (`course_id`),
+  KEY `started_by` (`started_by`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -184,12 +203,14 @@ INSERT INTO `attendance_sessions` (`id`, `course_id`, `started_by`, `start_time`
 --
 
 CREATE TABLE `behavior_logs` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `student_id` int(11) DEFAULT NULL,
   `course_id` int(11) DEFAULT NULL,
   `behavior` varchar(100) DEFAULT NULL,
   `confidence` int(11) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -199,14 +220,16 @@ CREATE TABLE `behavior_logs` (
 --
 
 CREATE TABLE `book` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `course_id` int(11) DEFAULT NULL,
   `title` varchar(100) DEFAULT NULL,
   `file_path` varchar(255) DEFAULT NULL,
   `type` enum('book','lecture','video','file') NOT NULL DEFAULT 'book',
   `uploaded_by` int(11) DEFAULT NULL,
   `description` text DEFAULT NULL,
-  `uploaded_at` datetime DEFAULT current_timestamp()
+  `uploaded_at` datetime DEFAULT current_timestamp(),
+
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -232,12 +255,15 @@ INSERT INTO `book` (`id`, `course_id`, `title`, `file_path`, `type`, `uploaded_b
 --
 
 CREATE TABLE `conversations` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `student_id` int(11) NOT NULL,
   `instructor_id` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
 
+  PRIMARY KEY (`id`),
+  KEY `student_id` (`student_id`),
+  KEY `instructor_id` (`instructor_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 --
 -- Dumping data for table `conversations`
 --
@@ -253,11 +279,15 @@ INSERT INTO `conversations` (`id`, `student_id`, `instructor_id`, `created_at`) 
 --
 
 CREATE TABLE `course` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `course_name` varchar(100) DEFAULT NULL,
   `department` varchar(100) DEFAULT NULL,
   `instructor_id` int(11) DEFAULT NULL,
-  `book_id` int(11) DEFAULT NULL
+  `book_id` int(11) DEFAULT NULL,
+
+  PRIMARY KEY (`id`),
+  KEY `instructor_id` (`instructor_id`),
+  KEY `book_id` (`book_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -274,12 +304,15 @@ INSERT INTO `course` (`id`, `course_name`, `department`, `instructor_id`, `book_
 --
 
 CREATE TABLE `course_grades` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `course_id` int(11) NOT NULL,
   `student_id` int(11) NOT NULL,
   `mid_grade` decimal(6,2) DEFAULT NULL,
   `final_grade` decimal(6,2) DEFAULT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_course_student` (`course_id`,`student_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -297,9 +330,11 @@ INSERT INTO `course_grades` (`id`, `course_id`, `student_id`, `mid_grade`, `fina
 --
 
 CREATE TABLE `gate_policy` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `mode` varchar(50) NOT NULL,
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
+
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -316,14 +351,18 @@ INSERT INTO `gate_policy` (`id`, `mode`, `updated_at`) VALUES
 --
 
 CREATE TABLE `grades` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `student_id` int(11) DEFAULT NULL,
   `course_id` int(11) DEFAULT NULL,
   `assignment_id` int(11) DEFAULT NULL,
   `grade` decimal(5,2) DEFAULT NULL,
-  `total_grade` decimal(5,2) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `total_grade` decimal(5,2) DEFAULT NULL,
 
+  PRIMARY KEY (`id`),
+  KEY `student_id` (`student_id`),
+  KEY `course_id` (`course_id`),
+  KEY `assignment_id` (`assignment_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 --
 -- Dumping data for table `grades`
 --
@@ -338,13 +377,17 @@ INSERT INTO `grades` (`id`, `student_id`, `course_id`, `assignment_id`, `grade`,
 --
 
 CREATE TABLE `messages` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `conversation_id` int(11) NOT NULL,
   `sender_id` int(11) NOT NULL,
   `message` text DEFAULT NULL,
   `file_path` varchar(255) DEFAULT NULL,
   `is_read` tinyint(1) DEFAULT 0,
-  `sent_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `sent_at` timestamp NOT NULL DEFAULT current_timestamp(),
+
+  PRIMARY KEY (`id`),
+  KEY `conversation_id` (`conversation_id`),
+  KEY `sender_id` (`sender_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -362,13 +405,15 @@ INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `message`, `file_p
 --
 
 CREATE TABLE `payments` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `student_id` varchar(64) NOT NULL,
   `receipt_number` varchar(128) NOT NULL,
   `amount` decimal(10,2) DEFAULT 0.00,
   `term` tinyint(4) NOT NULL,
   `paid_at` datetime DEFAULT current_timestamp(),
-  `extra` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`extra`))
+  `extra` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`extra`)),
+
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -385,16 +430,18 @@ INSERT INTO `payments` (`id`, `student_id`, `receipt_number`, `amount`, `term`, 
 --
 
 CREATE TABLE `quiz_question` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `assignment_id` int(11) NOT NULL,
   `q_type` enum('MCQ','TF','Short') NOT NULL DEFAULT 'MCQ',
   `question_text` text NOT NULL,
   `options` text DEFAULT NULL,
   `correct_answer` varchar(255) DEFAULT NULL,
   `marks` int(11) DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
 
+  PRIMARY KEY (`id`),
+  KEY `assignment_id` (`assignment_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 --
 -- Dumping data for table `quiz_question`
 --
@@ -412,15 +459,16 @@ INSERT INTO `quiz_question` (`id`, `assignment_id`, `q_type`, `question_text`, `
 --
 
 CREATE TABLE `robot_orders` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `student_id` int(11) DEFAULT NULL,
   `item` varchar(255) DEFAULT NULL,
   `lat` decimal(10,8) DEFAULT NULL,
   `lon` decimal(11,8) DEFAULT NULL,
   `status` varchar(50) DEFAULT 'pending',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
 
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 -- --------------------------------------------------------
 
 --
@@ -428,13 +476,15 @@ CREATE TABLE `robot_orders` (
 --
 
 CREATE TABLE `robot_tasks` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `student_id` int(11) DEFAULT NULL,
   `course_id` int(11) DEFAULT NULL,
   `task_type` varchar(100) DEFAULT NULL,
   `location` varchar(255) DEFAULT NULL,
   `status` varchar(50) DEFAULT 'waiting',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -444,14 +494,18 @@ CREATE TABLE `robot_tasks` (
 --
 
 CREATE TABLE `schedule` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `course_id` int(11) NOT NULL,
   `instructor_id` int(11) NOT NULL,
   `day` varchar(20) NOT NULL,
   `start_time` time NOT NULL,
   `end_time` time NOT NULL,
   `room` varchar(50) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+
+  PRIMARY KEY (`id`),
+  KEY `idx_schedule_course` (`course_id`),
+  KEY `idx_schedule_instructor` (`instructor_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -470,7 +524,10 @@ INSERT INTO `schedule` (`id`, `course_id`, `instructor_id`, `day`, `start_time`,
 CREATE TABLE `student_courses` (
   `student_id` int(11) NOT NULL,
   `course_id` int(11) NOT NULL,
-  `semester` varchar(100) DEFAULT NULL
+  `semester` varchar(100) DEFAULT NULL,
+
+  PRIMARY KEY (`student_id`,`course_id`),
+  KEY `course_id` (`course_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -500,14 +557,16 @@ CREATE TABLE `student_course_totals` (
 --
 
 CREATE TABLE `student_requests` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
   `email` varchar(100) DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `department` varchar(100) DEFAULT NULL,
   `level` int(11) DEFAULT NULL,
   `status` enum('pending','approved','rejected') DEFAULT 'pending',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -524,7 +583,7 @@ INSERT INTO `student_requests` (`id`, `name`, `email`, `phone`, `department`, `l
 --
 
 CREATE TABLE `submissions` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `assignment_id` int(11) NOT NULL,
   `student_id` int(11) NOT NULL,
   `file_path` text DEFAULT NULL,
@@ -532,7 +591,9 @@ CREATE TABLE `submissions` (
   `feedback` text DEFAULT NULL,
   `locked` tinyint(1) DEFAULT 1,
   `submitted_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `original_filename` varchar(255) DEFAULT NULL
+  `original_filename` varchar(255) DEFAULT NULL,
+
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -542,7 +603,7 @@ CREATE TABLE `submissions` (
 --
 
 CREATE TABLE `users` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) DEFAULT NULL,
   `email` varchar(100) DEFAULT NULL,
   `pass` varchar(100) DEFAULT NULL,
@@ -551,9 +612,11 @@ CREATE TABLE `users` (
   `role` enum('Student','Instructor','Admin') NOT NULL,
   `department` varchar(100) DEFAULT NULL,
   `level` varchar(10) DEFAULT NULL,
-  `status` enum('pending','active') DEFAULT 'pending'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `status` enum('pending','active') DEFAULT 'pending',
 
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 --
 -- Dumping data for table `users`
 --
@@ -574,8 +637,13 @@ INSERT INTO `users` (`id`, `name`, `email`, `pass`, `image`, `phone`, `role`, `d
 --
 DROP TABLE IF EXISTS `student_course_totals`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `student_course_totals`  AS SELECT `grades`.`student_id` AS `student_id`, `grades`.`course_id` AS `course_id`, sum(`grades`.`grade`) AS `total_grade` FROM `grades` GROUP BY `grades`.`student_id`, `grades`.`course_id` ;
-
+CREATE VIEW student_course_totals AS
+SELECT
+    grades.student_id,
+    grades.course_id,
+    SUM(grades.grade) AS total_grade
+FROM grades
+GROUP BY grades.student_id, grades.course_id;
 --
 -- Indexes for dumped tables
 --
@@ -583,158 +651,158 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 -- Indexes for table `ads`
 --
-ALTER TABLE `ads`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `instructor_id` (`instructor_id`),
-  ADD KEY `course_id` (`course_id`);
+-- ALTER TABLE `ads`
+--   ADD PRIMARY KEY (`id`),
+--   ADD KEY `instructor_id` (`instructor_id`),
+--   ADD KEY `course_id` (`course_id`);
 
 --
 -- Indexes for table `assignment`
 --
-ALTER TABLE `assignment`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `course_id` (`course_id`);
+-- ALTER TABLE `assignment`
+--   ADD PRIMARY KEY (`id`),
+--   ADD KEY `course_id` (`course_id`);
 
 --
 -- Indexes for table `assignment_submissions`
 --
-ALTER TABLE `assignment_submissions`
-  ADD PRIMARY KEY (`id`);
+-- ALTER TABLE `assignment_submissions`
+--   ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `attendance`
 --
-ALTER TABLE `attendance`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_attendance_student` (`student_id`),
-  ADD KEY `idx_attendance_course` (`course_id`),
-  ADD KEY `idx_attendance_date` (`date`),
-  ADD KEY `session_id` (`session_id`);
+-- ALTER TABLE `attendance`
+--   ADD PRIMARY KEY (`id`),
+--   ADD KEY `idx_attendance_student` (`student_id`),
+--   ADD KEY `idx_attendance_course` (`course_id`),
+--   ADD KEY `idx_attendance_date` (`date`),
+--   ADD KEY `session_id` (`session_id`);
 
 --
 -- Indexes for table `attendance_sessions`
 --
-ALTER TABLE `attendance_sessions`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `course_id` (`course_id`),
-  ADD KEY `started_by` (`started_by`);
+-- ALTER TABLE `attendance_sessions`
+--   ADD PRIMARY KEY (`id`),
+--   ADD KEY `course_id` (`course_id`),
+--   ADD KEY `started_by` (`started_by`);
 
 --
 -- Indexes for table `behavior_logs`
 --
-ALTER TABLE `behavior_logs`
-  ADD PRIMARY KEY (`id`);
+-- ALTER TABLE `behavior_logs`
+--   ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `book`
 --
-ALTER TABLE `book`
-  ADD PRIMARY KEY (`id`);
+-- ALTER TABLE `book`
+--   ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `conversations`
 --
-ALTER TABLE `conversations`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `student_id` (`student_id`),
-  ADD KEY `instructor_id` (`instructor_id`);
+-- ALTER TABLE `conversations`
+--   ADD PRIMARY KEY (`id`),
+--   ADD KEY `student_id` (`student_id`),
+--   ADD KEY `instructor_id` (`instructor_id`);
 
 --
 -- Indexes for table `course`
 --
-ALTER TABLE `course`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `instructor_id` (`instructor_id`),
-  ADD KEY `book_id` (`book_id`);
+-- ALTER TABLE `course`
+--   ADD PRIMARY KEY (`id`),
+--   ADD KEY `instructor_id` (`instructor_id`),
+--   ADD KEY `book_id` (`book_id`);
 
 --
 -- Indexes for table `course_grades`
 --
-ALTER TABLE `course_grades`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uniq_course_student` (`course_id`,`student_id`);
+-- ALTER TABLE `course_grades`
+--   ADD PRIMARY KEY (`id`),
+--   ADD UNIQUE KEY `uniq_course_student` (`course_id`,`student_id`);
 
 --
 -- Indexes for table `gate_policy`
 --
-ALTER TABLE `gate_policy`
-  ADD PRIMARY KEY (`id`);
+-- ALTER TABLE `gate_policy`
+--   ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `grades`
 --
-ALTER TABLE `grades`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `student_id` (`student_id`),
-  ADD KEY `course_id` (`course_id`),
-  ADD KEY `assignment_id` (`assignment_id`);
+-- ALTER TABLE `grades`
+--   ADD PRIMARY KEY (`id`),
+--   ADD KEY `student_id` (`student_id`),
+--   ADD KEY `course_id` (`course_id`),
+--   ADD KEY `assignment_id` (`assignment_id`);
 
 --
 -- Indexes for table `messages`
 --
-ALTER TABLE `messages`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `conversation_id` (`conversation_id`),
-  ADD KEY `sender_id` (`sender_id`);
+-- ALTER TABLE `messages`
+--   ADD PRIMARY KEY (`id`),
+--   ADD KEY `conversation_id` (`conversation_id`),
+--   ADD KEY `sender_id` (`sender_id`);
 
 --
 -- Indexes for table `payments`
 --
-ALTER TABLE `payments`
-  ADD PRIMARY KEY (`id`);
+-- ALTER TABLE `payments`
+--   ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `quiz_question`
 --
-ALTER TABLE `quiz_question`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `assignment_id` (`assignment_id`);
+-- ALTER TABLE `quiz_question`
+--   ADD PRIMARY KEY (`id`),
+--   ADD KEY `assignment_id` (`assignment_id`);
 
 --
 -- Indexes for table `robot_orders`
 --
-ALTER TABLE `robot_orders`
-  ADD PRIMARY KEY (`id`);
+-- ALTER TABLE `robot_orders`
+--   ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `robot_tasks`
 --
-ALTER TABLE `robot_tasks`
-  ADD PRIMARY KEY (`id`);
+-- ALTER TABLE `robot_tasks`
+--   ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `schedule`
 --
-ALTER TABLE `schedule`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_schedule_course` (`course_id`),
-  ADD KEY `idx_schedule_instructor` (`instructor_id`);
+-- ALTER TABLE `schedule`
+--   ADD PRIMARY KEY (`id`),
+--   ADD KEY `idx_schedule_course` (`course_id`),
+--   ADD KEY `idx_schedule_instructor` (`instructor_id`);
 
 --
 -- Indexes for table `student_courses`
 --
-ALTER TABLE `student_courses`
-  ADD PRIMARY KEY (`student_id`,`course_id`),
-  ADD KEY `course_id` (`course_id`);
+-- ALTER TABLE `student_courses`
+--   ADD PRIMARY KEY (`student_id`,`course_id`),
+--   ADD KEY `course_id` (`course_id`);
 
 --
 -- Indexes for table `student_requests`
 --
-ALTER TABLE `student_requests`
-  ADD PRIMARY KEY (`id`);
+-- ALTER TABLE `student_requests`
+--   ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `submissions`
 --
-ALTER TABLE `submissions`
-  ADD PRIMARY KEY (`id`);
+-- ALTER TABLE `submissions`
+--   ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `users`
 --
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`);
+-- ALTER TABLE `users`
+--   ADD PRIMARY KEY (`id`),
+--   ADD UNIQUE KEY `email` (`email`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -743,122 +811,122 @@ ALTER TABLE `users`
 --
 -- AUTO_INCREMENT for table `ads`
 --
-ALTER TABLE `ads`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+-- ALTER TABLE `ads`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `assignment`
 --
-ALTER TABLE `assignment`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+-- ALTER TABLE `assignment`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `assignment_submissions`
 --
-ALTER TABLE `assignment_submissions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+-- ALTER TABLE `assignment_submissions`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `attendance`
 --
-ALTER TABLE `attendance`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+-- ALTER TABLE `attendance`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `attendance_sessions`
 --
-ALTER TABLE `attendance_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+-- ALTER TABLE `attendance_sessions`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `behavior_logs`
 --
-ALTER TABLE `behavior_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+-- ALTER TABLE `behavior_logs`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `book`
 --
-ALTER TABLE `book`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+-- ALTER TABLE `book`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `conversations`
 --
-ALTER TABLE `conversations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+-- ALTER TABLE `conversations`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `course`
 --
-ALTER TABLE `course`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+-- ALTER TABLE `course`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `course_grades`
 --
-ALTER TABLE `course_grades`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+-- ALTER TABLE `course_grades`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `grades`
 --
-ALTER TABLE `grades`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+-- ALTER TABLE `grades`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `messages`
 --
-ALTER TABLE `messages`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+-- ALTER TABLE `messages`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `payments`
 --
-ALTER TABLE `payments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+-- ALTER TABLE `payments`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `quiz_question`
 --
-ALTER TABLE `quiz_question`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+-- ALTER TABLE `quiz_question`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `robot_orders`
 --
-ALTER TABLE `robot_orders`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+-- ALTER TABLE `robot_orders`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `robot_tasks`
 --
-ALTER TABLE `robot_tasks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+-- ALTER TABLE `robot_tasks`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `schedule`
 --
-ALTER TABLE `schedule`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+-- ALTER TABLE `schedule`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `student_requests`
 --
-ALTER TABLE `student_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+-- ALTER TABLE `student_requests`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `submissions`
 --
-ALTER TABLE `submissions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+-- ALTER TABLE `submissions`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
-ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+-- ALTER TABLE `users`
+--   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- Constraints for dumped tables
