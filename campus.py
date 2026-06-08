@@ -4909,6 +4909,14 @@ def open_box(id):
     db.commit()
 
     return jsonify({"message":"box opened"})
+
+
+####################################
+from flask import render_template
+
+@app.route("/")
+def home():
+    return render_template("login.html")
  
 
 
