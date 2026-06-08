@@ -5009,8 +5009,8 @@ def generate_qr_page():
     return render_template("generate_qr.html")
 
 
-@app.route("/prof_ads")
-def prof_ads_page():
+@app.route("/Prof_ads")
+def Prof_ads_page():
     return render_template("Prof_ads.html")
 
 
@@ -5019,8 +5019,8 @@ def prof_assigment_page():
     return render_template("prof_assigment.html")
 
 
-@app.route("/prof_courses")
-def prof_courses_page():
+@app.route("/Prof_courses")
+def Prof_courses_page():
     return render_template("Prof_courses.html")
 
 
@@ -5044,8 +5044,8 @@ def Prof_Proctoring_page():
     return render_template("Prof_Proctoring.html")
 
 
-@app.route("/prof_schedule")
-def prof_schedule_page():
+@app.route("/Prof_schedule")
+def Prof_schedule_page():
     return render_template("Prof_schedule.html")
 
 
