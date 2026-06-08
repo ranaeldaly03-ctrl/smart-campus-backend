@@ -4954,7 +4954,7 @@ def chatbot_page():
 #     )
 
  
-@app.route("/courses_page")
+@app.route("/courses")
 def courses_page():
     return render_template("courses.html")
 
@@ -5039,8 +5039,8 @@ def student_courses_page():
     return render_template("stu_courses.html")
 
 
-@app.route("/student_dashboard")
-def student_dashboard_page():
+@app.route("/stu_dashboard")
+def stu_dashboard():
     return render_template("stu_dashboard.html")
 
 
