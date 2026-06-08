@@ -1,0 +1,11 @@
+*.pt
+*.mp4
+*.pptx
+uploads/
+venv/
+new_venv/
+class_env/
+face_env/
+proctor_env/
+proctor_env_clean/
+__pycache__/
