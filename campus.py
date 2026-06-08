@@ -1889,7 +1889,7 @@ def get_cursor(dictionary=True):
         db = mysql.connector.connect(
             host="mysql-26b19251-ranaeldaly03-48a8.g.aivencloud.com",
             user="avnadmin",
-            password=DB_PASSWORD
+            password=DB_PASSWORD,
             database="smart_campus_new",
             port=27139
         )
