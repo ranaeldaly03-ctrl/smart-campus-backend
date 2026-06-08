@@ -4551,11 +4551,10 @@ def start_conversation():
     return jsonify({"conversation_id": cur.lastrowid}), 200
 
 
-@app.route('/conversation/<int:id>')
-def get_messages(id):
-
-    db = get_db()  # 🔥 افتحي connection جديد
-    cur = db.cursor(dictionary=True)
+@app.route("/conversation/<int:conversation_id>/mark_read", methods=["PUT"])
+def mark_as_read(conversation_id):
+    db = get_db()
+    cur = db.cursor()
 
     cur.execute("""
         SELECT * FROM messages
