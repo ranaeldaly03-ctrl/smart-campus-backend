@@ -103,6 +103,7 @@ def get_student(student_id):
 @app.route('/student/<int:student_id>/courses', methods=['GET'])
 def get_student_courses(student_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("""
             SELECT c.id AS course_id, c.course_name, c.department,
@@ -275,6 +276,7 @@ def add_instructor():
 
 @app.route('/admin/student_requests', methods=['GET'])
 def get_requests():
+    db = get_db()
     cur = db.cursor(dictionary=True)
     cur.execute("SELECT * FROM student_requests WHERE status='pending'")
     return jsonify(cur.fetchall())
@@ -314,6 +316,7 @@ def cleanup_pending_students():
 
 @app.route('/admin/pending_students', methods=['GET'])
 def pending_students():
+    db = get_db()
     cur = db.cursor(dictionary=True)
     cur.execute("""
         SELECT id, name, email, department, level, status
@@ -809,6 +812,7 @@ def serve_upload(filename):
 @app.route('/user/<int:user_id>', methods=['GET'])
 def get_user(user_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("SELECT id, name, email, role, image FROM users WHERE id = %s", (user_id,))
         user = cur.fetchone()
@@ -1001,6 +1005,7 @@ def add_ads():
         if not instructor_id or not text or text.strip() == "":
             return jsonify({"message": "Missing required fields"}), 400
 
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("""
             INSERT INTO ads (instructor_id, course_id, text)
@@ -1030,6 +1035,7 @@ def add_ads():
 @app.route('/instructor/<int:inst_id>/ads', methods=['GET'])
 def get_instructor_ads(inst_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("""
             SELECT a.id, a.content, a.course_id, c.course_name, a.created_at
@@ -1050,6 +1056,7 @@ def get_instructor_ads(inst_id):
 @app.route('/course/<int:course_id>/ads', methods=['GET'])
 def get_course_ads(course_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("""
            SELECT a.id, a.content, a.created_at, u.name AS instructor_name, a.course_id
@@ -1070,6 +1077,7 @@ def get_course_ads(course_id):
 @app.route('/ads', methods=['GET'])
 def get_all_ads():
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("""
             SELECT a.id, a.content, a.course_id, c.course_name, u.name AS instructor_name, a.created_at
@@ -1128,6 +1136,7 @@ def delete_ad(ad_id):
 @app.route('/course/<int:course_id>/schedule', methods=['GET'])
 def get_course_schedule(course_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("""
             SELECT s.id, s.day, s.start_time, s.end_time, s.room,
@@ -1163,6 +1172,7 @@ def get_course_schedule(course_id):
 @app.route('/student/<int:student_id>/dashboard', methods=['GET'])
 def student_dashboard(student_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
 
         # 1) جلب معلومات الطالب (level)
@@ -1225,6 +1235,7 @@ def student_dashboard(student_id):
 @app.route('/student/<int:student_id>/ads', methods=['GET'])
 def get_student_ads(student_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
 
         # 1) جلب كورسات الطالب المسجلة
@@ -1317,6 +1328,7 @@ def get_student_ads(student_id):
 @app.route('/student/<int:student_id>/assignments', methods=['GET'])
 def get_student_assignments(student_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("""
             SELECT
@@ -1373,6 +1385,7 @@ def get_student_assignments(student_id):
 @app.route('/student/<int:student_id>/quizzes', methods=['GET'])
 def get_student_quizzes(student_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         # نفترض أن الكويزات محفوظة في جدول assignment مع type='Quiz'
         cur.execute("""
@@ -1410,6 +1423,7 @@ def get_student_quizzes(student_id):
 # GET grades for a student (detailed list + totals per course)
 @app.route('/student/<int:student_id>/grades', methods=['GET'])
 def get_student_grades(student_id):
+    db = get_db()
     cur = db.cursor(dictionary=True)
     # درجات مفصلة
     cur.execute("""
@@ -1755,6 +1769,7 @@ def start_attendance(course_id):
 
 @app.route('/stop_attendance/<int:course_id>', methods=['POST'])
 def stop_attendance(course_id):
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     # 1️⃣ هات السيشن الفعالة
@@ -1811,8 +1826,8 @@ def mark_by_code():
     if not student_id or not session_code:
         return jsonify({"message":"student_id and session_code required"}), 400
 
+    db = get_db()
     cur = db.cursor(dictionary=True)
-
     # 1️⃣ هات السيشن الفعالة بس
     cur.execute("""
         SELECT * FROM attendance_sessions
@@ -1857,6 +1872,7 @@ def mark_by_code():
 
 @app.route('/attendance_session/<int:session_id>/students', methods=['GET'])
 def attendance_session_students(session_id):
+    db = get_db()
     cur = db.cursor(dictionary=True)
     cur.execute("""
         SELECT u.id, u.name, a.date, a.status
@@ -1872,6 +1888,7 @@ def attendance_session_students(session_id):
 
 @app.route('/course/<int:course_id>/last_session', methods=['GET'])
 def last_session(course_id):
+    db = get_db()
     cur = db.cursor(dictionary=True)
     cur.execute("SELECT * FROM attendance_sessions WHERE course_id=%s ORDER BY start_time DESC LIMIT 1", (course_id,))
     s = cur.fetchone()
@@ -2088,6 +2105,7 @@ def publish_quiz(quiz_id):
 @app.route('/quiz/<int:quiz_id>', methods=['GET'])
 def get_quiz(quiz_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         # جدولك اسمه `assignment` — نتحقق أن النوع Quiz (اختياري)
         cur.execute("SELECT id, course_id, title, due_date, total_mark, start_time, end_time FROM assignment WHERE id = %s AND type = 'Quiz'", (quiz_id,))
@@ -2128,6 +2146,7 @@ def submit_quiz(quiz_id):
         answers = data.get('answers')  # [{question_id, answer_string}...]
 
         # بسيطة: نحسب درجات مطابقة الإجابة الصحيحة (للـ MCQ/TF/Short) — ممكن تطوري
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("SELECT id, correct_answer, points FROM quiz_question WHERE assignment_id = %s", (quiz_id,))
         qrows = cur.fetchall()
@@ -2190,6 +2209,7 @@ def add_quiz_question(assignment_id):
 @app.route('/quiz/<int:assignment_id>/questions', methods=['GET'])
 def get_quiz_questions(assignment_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("SELECT * FROM quiz_question WHERE assignment_id = %s ORDER BY id", (assignment_id,))
         rows = cur.fetchall()
@@ -2210,6 +2230,7 @@ def get_quiz_questions(assignment_id):
 @app.route('/assignment/<int:assignment_id>/with_questions', methods=['GET'])
 def get_assignment_with_questions(assignment_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("SELECT * FROM assignment WHERE id = %s", (assignment_id,))
         assignment = cur.fetchone()
@@ -2382,6 +2403,7 @@ from flask import url_for
 @app.route('/course/<int:course_id>/books_and_files', methods=['GET'])
 def course_books_and_files(course_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("""
             SELECT id, course_id, title, file_path, type, uploaded_at
@@ -2572,6 +2594,7 @@ def unlock_submission(submission_id):
         # الآن: نسمح لو مررنا force=True أو إذا action_by هو نفس student (اختياري)
         force = data.get('force', False)
 
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("SELECT id, student_id, file_path, locked FROM assignment_submissions WHERE id = %s", (submission_id,))
         row = cur.fetchone()
@@ -2620,6 +2643,7 @@ def unlock_submission(submission_id):
 @app.route('/submission/<int:submission_id>', methods=['DELETE'])
 def delete_submission(submission_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("SELECT id, file_path, locked FROM assignment_submissions WHERE id = %s", (submission_id,))
         row = cur.fetchone()
@@ -3105,6 +3129,7 @@ def get_cursor_dict():
         # conn = pool.get_connection() 
         # return conn, conn.cursor(dictionary=True)
         # If using global db:
+        db = get_db()
         cur = db.cursor(dictionary=True)
         return db, cur
     except Exception as e:
@@ -3128,6 +3153,7 @@ def gate_check():
     if not student_id:
         return jsonify({"allowed": False, "reason": "student_id required"}), 400
 
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     # اقرأ السياسة الحالية
@@ -3171,6 +3197,7 @@ def gate_check():
 # جلب بيانات الطالب وبحالة الدفع
 @app.route('/student_status/<int:student_id>', methods=['GET'])
 def student_status(student_id):
+    db = get_db()
     cur = db.cursor(dictionary=True)
     # جلب المستخدم
     cur.execute("SELECT id, name, role FROM users WHERE id = %s", (student_id,))
@@ -3197,6 +3224,7 @@ def student_status(student_id):
 
 @app.route('/gate_policy', methods=['GET'])
 def get_gate_policy():
+    db = get_db()
     cur = db.cursor(dictionary=True)
     cur.execute("SELECT mode FROM gate_policy LIMIT 1")
     row = cur.fetchone()
@@ -3247,6 +3275,7 @@ def check_access():
     data = request.get_json()
     student_id = data.get("student_id")
 
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     # 1️⃣ نجيب السياسة
@@ -3304,6 +3333,7 @@ def check_access():
 @app.route('/student/<int:student_id>/midterm', methods=['GET'])
 def get_student_midterm(student_id):
     try:
+        db = get_db()
         cur = db.cursor(dictionary=True)
 
         cur.execute("""
@@ -3388,6 +3418,7 @@ def chatbot_ai():
         }), 400
 
     # 1️⃣ Get lecture or book PDF from database
+    db = get_db()
     cur = db.cursor(dictionary=True)
     cur.execute("""
         SELECT file_path
@@ -3520,6 +3551,7 @@ def chatbot():
 
     # 1️⃣ الجدول
     if intent == "schedule":
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("""
             SELECT c.course_name, s.day, s.start_time, s.end_time, s.room
@@ -3542,6 +3574,7 @@ def chatbot():
 
     # 2️⃣ الغياب
     elif intent == "attendance":
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("""
             SELECT 
@@ -3559,6 +3592,7 @@ def chatbot():
 
     # 3️⃣ الدرجات
     elif intent == "grades":
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("""
             SELECT c.course_name, g.total_grade
@@ -3581,6 +3615,7 @@ def chatbot():
 
     # 4️⃣ البوابة
     elif intent == "gate":
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("SELECT mode FROM gate_policy LIMIT 1")
         policy = cur.fetchone()
@@ -3592,6 +3627,7 @@ def chatbot():
 
     # 5️⃣ الكورسات
     elif intent == "courses":
+        db = get_db()
         cur = db.cursor(dictionary=True)
         cur.execute("""
             SELECT c.course_name
@@ -3666,6 +3702,7 @@ def attendance_ai(student_id):
 
 
 def academic_advisor_ai(student_id):
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     cur.execute(
@@ -3755,6 +3792,7 @@ def grades_ai(student_id):
     
 
 def schedule_ai(student_id):
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     cur.execute("""
@@ -4132,6 +4170,7 @@ def ai_behavior_log():
 @app.route('/cheating_alerts')
 def cheating_alerts():
 
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     cur.execute("""
@@ -4201,6 +4240,7 @@ def check_rfid():
     data = request.get_json()
     uid = data.get("uid").upper()
 
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     # 1️⃣ نجيب سياسة البوابة
@@ -4384,6 +4424,7 @@ def scan_rfid():
     data = request.get_json()
     uid = data.get("uid").upper()
 
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     if current_registration:
@@ -4424,6 +4465,7 @@ def gate_logs_page():
 
 @app.route("/get_logs")
 def get_logs():
+    db = get_db()
     cur = db.cursor(dictionary=True)
     cur.execute("""
         SELECT * FROM gate_logs
@@ -4487,6 +4529,7 @@ def start_conversation():
     student_id = data.get('student_id')
     instructor_id = data.get('instructor_id')
 
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     # تأكد إنها مش موجودة
@@ -4649,6 +4692,7 @@ def student_unread_count(student_id):
 
 @app.route('/instructor/<int:instructor_id>/unread_by_conversation')
 def unread_by_conversation(instructor_id):
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     cur.execute("""
@@ -4695,6 +4739,7 @@ def get_instructor_conversations(instructor_id):
 
 @app.route('/student/<int:student_id>/unread_by_conversation')
 def student_unread_by_conversation(student_id):
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     cur.execute("""
@@ -5004,7 +5049,12 @@ def prof_schedule_page():
     return render_template("Prof_schedule.html")
 
 
-@app.route("/prof_students")
+@app.route("/prof_chat")
+def prof_chat_page():
+    return render_template("prof_chat.html")
+
+
+@app.route("/Prof_students")
 def prof_students_page():
     return render_template("Prof_students.html")
 
