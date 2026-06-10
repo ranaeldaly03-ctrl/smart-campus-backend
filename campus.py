@@ -70,7 +70,6 @@ db = mysql.connector.connect(
     database=DB_NAME,
     port=DB_PORT
 )
-
 cursor = db.cursor(dictionary=True)
 
 
@@ -242,6 +241,8 @@ def add_instructor():
 
         if not all([name, email, password, phone, department]):
             return jsonify({"message": "Missing required fields"}), 400
+        
+        db = get_db()
 
         cursor = db.cursor(dictionary=True)
         cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
@@ -4606,6 +4607,7 @@ def start_conversation():
     student_id = data.get('student_id')
     instructor_id = data.get('instructor_id')
 
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     # تأكد إنها مش موجودة
@@ -4623,6 +4625,9 @@ def start_conversation():
         VALUES (%s, %s)
     """, (student_id, instructor_id))
     db.commit()
+
+    cur.close()
+    db.close()
 
     return jsonify({"conversation_id": cur.lastrowid}), 200
 
@@ -4712,6 +4717,7 @@ def get_instructor_students(instructor_id):
 
 @app.route('/conversation/<int:conversation_id>/mark_read', methods=['PUT'])
 def mark_as_read(conversation_id):
+    db = get_db()
     cur = db.cursor()
     cur.execute("""
         UPDATE messages
@@ -4814,6 +4820,7 @@ def get_instructor_conversations(instructor_id):
 
 @app.route('/student/<int:student_id>/unread_by_conversation')
 def student_unread_by_conversation(student_id):
+    db = get_db()
     cur = db.cursor(dictionary=True)
 
     cur.execute("""
@@ -4862,6 +4869,8 @@ def handle_send_message(data):
         port=DB_PORT
     )
 
+
+    db = get_db()
     cur = db.cursor()
 
     conversation_id = data.get("conversation_id")
@@ -5255,6 +5264,7 @@ def robot_order():
     lon = data.get("lon")
     item = data.get("item")
 
+    db = get_db()
     cursor = db.cursor()
     cursor.execute("""
         INSERT INTO robot_orders (lat, lon, item, status)
@@ -5270,6 +5280,8 @@ def robot_order():
 
 @app.route('/robot/get_order')
 def get_order():
+
+    db = get_db()
 
     cursor = db.cursor(dictionary=True)
 
@@ -5288,6 +5300,8 @@ def get_order():
 @app.route('/robot/done/<int:id>', methods=['POST'])
 def robot_done(id):
 
+    db = get_db()
+
     cursor = db.cursor()
 
     cursor.execute("""
@@ -5304,6 +5318,8 @@ def robot_done(id):
 
 @app.route('/robot/get_my_order')
 def get_my_order():
+
+    db = get_db()
 
     cursor = db.cursor(dictionary=True)
 
@@ -5324,6 +5340,8 @@ def get_my_order():
 @app.route('/robot/close_box/<int:id>', methods=['POST'])
 def close_box(id):
 
+    db = get_db()
+
     cursor=db.cursor()
 
     cursor.execute("""
@@ -5343,6 +5361,8 @@ def close_box(id):
 
 @app.route('/robot/open_box/<int:id>', methods=['POST'])
 def open_box(id):
+
+    db = get_db()
 
     cursor=db.cursor()
 
