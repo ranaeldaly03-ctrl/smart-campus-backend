@@ -4812,6 +4812,29 @@ def get_instructor_conversations(instructor_id):
 
 
 
+@app.route("/conversation/<int:conversation_id>", methods=["GET"])
+def get_messages(conversation_id):
+
+    db = get_db()
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+        SELECT *
+        FROM messages
+        WHERE conversation_id=%s
+        ORDER BY sent_at
+    """, (conversation_id,))
+
+    messages = cur.fetchall()
+
+    cur.close()
+    db.close()
+
+    return jsonify(messages)
+
+
+    
+
 @app.route('/student/<int:student_id>/unread_by_conversation')
 def student_unread_by_conversation(student_id):
     db = get_db()
