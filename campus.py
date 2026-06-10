@@ -4649,10 +4649,11 @@ def get_messages(id):
 def get_db():
     import mysql.connector
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="smart_campus_new"
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        port=DB_POR
     )
 
 @app.route('/student/<int:student_id>/instructors')
@@ -4854,10 +4855,11 @@ def handle_send_message(data):
     import mysql.connector
 
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="smart_campus_new"
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        port=DB_POR
     )
 
     cur = db.cursor()
@@ -4966,11 +4968,11 @@ def unread_count(instructor_id):
 # def get_db():
 #     import mysql.connector
 #     return mysql.connector.connect(
-#         host=DB_HOST,
-#         user=DB_USER,
-#         password=DB_PASSWORD,
-#         database=DB_NAME,
-#         port=DB_PORT
+        # host=DB_HOST,
+        # user=DB_USER,
+        # password=DB_PASSWORD,
+        # database=DB_NAME,
+        # port=DB_PORT
 #     )
 
 # @app.route('/student/<int:student_id>/instructors')
