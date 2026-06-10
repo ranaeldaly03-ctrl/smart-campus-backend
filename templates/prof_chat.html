@@ -138,6 +138,7 @@
 
         const instructor_id = Number(localStorage.getItem("user_id"));
         let conversation_id=null;
+        let selectedStudentId = null;
 
 
         const profId = localStorage.getItem("user_id");
@@ -221,6 +222,8 @@
                         </div>
                     `;
 
+                    console.log(item);
+
                     div.onclick = () => {
                         openConversationWithStudent(item.id, item.name);
                     };
@@ -231,6 +234,8 @@
         }
         // ================= OPEN CONVERSATION =================
         function openConversationWithStudent(student_id, student_name){
+
+            selectedStudentId = student_id;
 
             document.getElementById("chatHeader").innerText = "💬 " + student_name;
 
@@ -317,7 +322,6 @@
         // ================= SEND MESSAGE =================
         async function sendMessage(){
 
-            console.log("student_id =", student_id);
             console.log("conversation_id =", conversation_id);
 
             if (!conversation_id) {
