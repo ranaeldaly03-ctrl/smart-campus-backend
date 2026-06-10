@@ -226,6 +226,7 @@
 
                     div.onclick = () => {
                         openConversationWithStudent(item.id, item.name);
+                        alert("conversation = " + conversation_id);
                     };
 
                     list.appendChild(div);
@@ -265,6 +266,9 @@
                 console.log("conversation_id =", conversation_id);
 
                 loadOldMessages();
+                fetch(api + `/conversation/${conversation_id}/mark_read`,{
+                    method:"PUT"
+                });
             })
             .catch(err => {
                 console.error("ERROR =", err);
