@@ -189,7 +189,13 @@
             .then(([students, unreadData]) => {
 
                 const list = document.getElementById("studentsList");
-                list.innerHTML = "";
+                list.innerHTML += `
+                    <div class="user">
+                        <img src="/uploads/${stu.image}"
+                            style="width:35px;height:35px;border-radius:50%">
+                        <span>${stu.name}</span>
+                    </div>
+                    `;
 
                 students.forEach(item => {
 

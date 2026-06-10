@@ -138,7 +138,13 @@
             .then(([instructors, unreadData]) => {
 
                 const list = document.getElementById("instructorsList");
-                list.innerHTML = "";
+                list.innerHTML += `
+                    <div class="user">
+                        <img src="/uploads/${doc.image}"
+                            style="width:35px;height:35px;border-radius:50%">
+                        <span>${doc.name}</span>
+                    </div>
+                    `;
 
                 instructors.forEach(inst => {
 
