@@ -235,6 +235,8 @@
         // ================= OPEN CONVERSATION =================
         function openConversationWithStudent(student_id, student_name){
 
+            console.log("clicked student", student_id, student_name);
+
             selectedStudentId = student_id;
 
             document.getElementById("chatHeader").innerText = "💬 " + student_name;
@@ -251,6 +253,8 @@
             })
             .then(res => res.json())
             .then(data => {
+
+                console.log("API Response:", data);
 
                 conversation_id = data.conversation_id;
 
