@@ -4197,45 +4197,159 @@ def cheating_alerts():
 #################Gate####################3
 # ######################################3
 
+@app.route('/api/check_access', methods=['POST'])
+def api_check_access():
+
+    print("CHECK ACCESS API CALLED")
+
+    data = request.get_json()
+    uid = data.get("uid")
+
+    if not uid:
+        return jsonify({
+            "access": 0,
+            "name": "Unknown",
+            "role": ""
+        }), 400
+
+    cur = db.cursor(dictionary=True, buffered=True)
+
+    cur.execute("""
+        SELECT *
+        FROM users
+        WHERE rfid_uid=%s
+    """, (uid,))
+
+    user = cur.fetchone()
+
+    print("USER FOUND =", user)
+
+    access = 0
+    name = "Access Denied"
+    role = ""
+
+    if user and user["gate_access"] == 1:
+        access = 1
+        name = user["name"]
+        role = user["role"]
+
+    # تسجيل اللوج
+    cur2 = db.cursor()
+
+    cur2.execute("""
+        INSERT INTO gate_logs
+        (name, uid, status, user_name)
+        VALUES (%s,%s,%s,%s)
+    """, (
+        name,
+        uid,
+        "Allowed" if access else "Denied",
+        name
+    ))
+
+    db.commit()
+
+    cur2.close()
+    cur.close()
+
+    return jsonify({
+        "access": access,
+        "name": name,
+        "role": role
+    })
+
+
+
+@app.route("/registration_status")
+def registration_status():
+
+    global current_registration
+    global registration_mode
+
+    return jsonify({
+        "waiting":
+        current_registration is not None,
+
+        "registration_mode":
+        registration_mode
+    })
+
+
+
+@app.route("/delete_card", methods=["POST"])
+def delete_card():
+
+    data = request.get_json()
+    uid = data.get("uid")
+
+    print("DELETE UID =", uid)
+
+    cur = db.cursor()
+
+    cur.execute("""
+        UPDATE users
+        SET rfid_uid=NULL
+        WHERE rfid_uid=%s
+    """, (uid,))
+
+    db.commit()
+
+    cur.close()
+
+    return jsonify({
+        "success": True
+    })
+
+
 # @app.route("/check_rfid", methods=["POST"])
 # def check_rfid():
 #     data = request.get_json()
 #     uid = data.get("uid").upper()
 
+#     db = get_db()
 #     cur = db.cursor(dictionary=True)
 
-#     # 1️⃣ نجيب سياسة البوابة الحالية
+#     # 1️⃣ نجيب سياسة البوابة
 #     cur.execute("SELECT mode FROM gate_policy ORDER BY id DESC LIMIT 1")
 #     policy = cur.fetchone()
-
 #     mode = policy["mode"] if policy else "id_only"
 
-#     # 2️⃣ نجيب الطالب
+#     # 2️⃣ نجيب المستخدم
 #     cur.execute("SELECT * FROM students WHERE rfid_uid = %s", (uid,))
-#     student = cur.fetchone()
+#     user = cur.fetchone()
 
 #     access = False
 #     student_id = None
 
-#     if student:
-#         student_id = student["student_id"]
+#     if user:
+#         student_id = user["student_id"]
 
-#         if mode == "id_only":
+
+#         if user["override_access"] is not None:
+#             access = bool(user["override_access"])
+
+#         # 🔥 لو دكتور أو أدمن يدخل دايمًا
+#         elif user["role"] in ["doctor", "admin"]:
 #             access = True
 
-#         elif mode == "term1_paid":
-#             if student["term1_paid"]:
+#         # 👨‍🎓 لو طالب يخضع للسياسة
+#         else:
+#             if mode == "id_only":
 #                 access = True
 
-#         elif mode == "term1_and_term2_paid":
-#             if student["term2_paid"]:
-#                 access = True
+#             elif mode == "term1_paid":
+#                 if user["term1_paid"]:
+#                     access = True
 
-#         elif mode == "any_paid":
-#             if student["term1_paid"] or student["term2_paid"]:
-#                 access = True
+#             elif mode == "term1_and_term2_paid":
+#                 if user["term2_paid"]:
+#                     access = True
 
-#     # 3️⃣ تسجيل الدخول في اللوجز
+#             elif mode == "any_paid":
+#                 if user["term1_paid"] or user["term2_paid"]:
+#                     access = True
+
+#     # تسجيل في اللوجز
 #     cur.execute(
 #         "INSERT INTO gate_logs (student_id, rfid_uid, access) VALUES (%s, %s, %s)",
 #         (student_id, uid, access)
@@ -4246,80 +4360,68 @@ def cheating_alerts():
 #     return jsonify({"access": access})
 
 
-@app.route("/check_rfid", methods=["POST"])
-def check_rfid():
+
+@app.route("/update_gate_access", methods=["POST"])
+def update_gate_access():
+
     data = request.get_json()
-    uid = data.get("uid").upper()
 
-    db = get_db()
-    cur = db.cursor(dictionary=True)
+    uid = data.get("uid")
+    access = data.get("access")
 
-    # 1️⃣ نجيب سياسة البوابة
-    cur.execute("SELECT mode FROM gate_policy ORDER BY id DESC LIMIT 1")
-    policy = cur.fetchone()
-    mode = policy["mode"] if policy else "id_only"
-
-    # 2️⃣ نجيب المستخدم
-    cur.execute("SELECT * FROM students WHERE rfid_uid = %s", (uid,))
-    user = cur.fetchone()
-
-    access = False
-    student_id = None
-
-    if user:
-        student_id = user["student_id"]
-
-
-        if user["override_access"] is not None:
-            access = bool(user["override_access"])
-
-        # 🔥 لو دكتور أو أدمن يدخل دايمًا
-        elif user["role"] in ["doctor", "admin"]:
-            access = True
-
-        # 👨‍🎓 لو طالب يخضع للسياسة
-        else:
-            if mode == "id_only":
-                access = True
-
-            elif mode == "term1_paid":
-                if user["term1_paid"]:
-                    access = True
-
-            elif mode == "term1_and_term2_paid":
-                if user["term2_paid"]:
-                    access = True
-
-            elif mode == "any_paid":
-                if user["term1_paid"] or user["term2_paid"]:
-                    access = True
-
-    # تسجيل في اللوجز
-    cur.execute(
-        "INSERT INTO gate_logs (student_id, rfid_uid, access) VALUES (%s, %s, %s)",
-        (student_id, uid, access)
-    )
-
-    db.commit()
-
-    return jsonify({"access": access})
-
-
-
-@app.route("/update_access", methods=["POST"])
-def update_access():
-    data = request.get_json()
-    student_id = data.get("student_id")
-    is_allowed = data.get("is_allowed")
+    print("UID =", uid)
+    print("ACCESS =", access)
 
     cur = db.cursor()
     cur.execute(
-        "UPDATE students SET is_allowed = %s WHERE student_id = %s",
-        (is_allowed, student_id)
+    """
+    UPDATE users
+    SET gate_access=%s
+    WHERE rfid_uid=%s
+    """,
+    (access, uid)
     )
+
     db.commit()
 
-    return jsonify({"success": True})
+    cur.execute(
+    "SELECT gate_access FROM users WHERE rfid_uid=%s",
+    (uid,)
+    )
+
+    print("AFTER UPDATE =", cur.fetchone())
+
+    cur.close()
+
+    return jsonify({
+        "success": True
+    })
+
+
+
+
+@app.route("/get_cards")
+def get_cards():
+
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+            SELECT
+            id,
+            name,
+            role,
+            rfid_uid,
+            gate_access
+            FROM users
+            WHERE rfid_uid IS NOT NULL
+            """)
+
+    cards = cur.fetchall()
+
+    cur.close()
+
+    return jsonify(cards)    
+
 
 
 
@@ -4345,87 +4447,45 @@ def register_rfid():
 
 current_registration_id = None
 
-# @app.route("/start_registration", methods=["POST"])
-# def start_registration():
-#     global current_registration_id
-#     data = request.get_json()
-#     current_registration_id = data.get("student_id")
-#     return jsonify({"status": "waiting"})
-
 
 @app.route("/start_registration", methods=["POST"])
 def start_registration():
+
     global current_registration
+    global registration_mode
 
     data = request.get_json()
 
+    user_id = data.get("user_id")
+
+    cur = db.cursor(dictionary=True)
+
+    cur.execute(
+        "SELECT * FROM users WHERE id=%s",
+        (user_id,)
+    )
+
+    user = cur.fetchone()
+
+    if not user:
+        return jsonify({
+            "status": "error",
+            "message": "User ID not found"
+        })
+
     current_registration = {
-        "student_id": data.get("student_id"),
-        "name": data.get("name")
+        "user_id": user_id
+
     }
-
-    return jsonify({"status": "waiting"})
-
-
-
-
-# @app.route("/scan_rfid", methods=["POST"])
-# def scan_rfid():
-#     global current_registration_id
-
-#     data = request.get_json()
-#     uid = data.get("uid").upper()
-
-#     print("UID received:", uid)
-
-#     cur = db.cursor(dictionary=True)
-
-#     # ----------------------------------
-#     # لو في وضع تسجيل
-#     # ----------------------------------
-#     if current_registration_id:
-
-#         print("Registering card to:", current_registration_id)
-
-#         # هل الطالب موجود؟
-#         cur.execute("SELECT * FROM students WHERE student_id = %s",
-#                     (current_registration_id,))
-#         student = cur.fetchone()
-
-#         if student:
-#             # تحديث الكارت
-#             cur.execute(
-#                 "UPDATE students SET rfid_uid = %s WHERE student_id = %s",
-#                 (uid, current_registration_id)
-#             )
-#             print("Card updated.")
-#         else:
-#             # إنشاء طالب جديد بالكارت
-#             cur.execute(
-#                 "INSERT INTO students (student_id, rfid_uid) VALUES (%s, %s)",
-#                 (current_registration_id, uid)
-#             )
-#             print("New student created with card.")
-
-#         db.commit()
-
-#         current_registration_id = None  # خروج من وضع التسجيل
-
-#         return jsonify({"access": True, "mode": "registered"})
+    registration_mode = True
+    print("WAITING FOR USER:", user_id)
+    return jsonify({
+        "status": "waiting",
+        "name": user["name"]
+    })
 
 
-#     # ----------------------------------
-#     # غير كده فحص عادي
-#     # ----------------------------------
-#     cur.execute("SELECT * FROM students WHERE rfid_uid = %s", (uid,))
-#     student = cur.fetchone()
 
-#     if student:
-#         print("Access granted")
-#         return jsonify({"access": True})
-#     else:
-#         print("Access denied")
-#         return jsonify({"access": False})
     
 
 @app.route("/scan_rfid", methods=["POST"])
@@ -4465,35 +4525,40 @@ def scan_rfid():
 
     return jsonify({"access": False})
 
-
-    
-
-
-@app.route("/gate_logs")
-def gate_logs_page():
-    return render_template("gate_logs.html")
+ 
 
 
 @app.route("/get_logs")
 def get_logs():
-    db = get_db()
-    cur = db.cursor(dictionary=True)
+
+    cur = db.cursor(dictionary=True, buffered=True)
+
     cur.execute("""
-        SELECT * FROM gate_logs
-        ORDER BY timestamp DESC
-        LIMIT 100
-    """)
+            SELECT
+                users.name,
+                users.role,
+                gate_logs.uid,
+                gate_logs.status,
+                gate_logs.time
+            FROM gate_logs
+            LEFT JOIN users
+            ON TRIM(gate_logs.uid) = TRIM(users.rfid_uid)
+            ORDER BY gate_logs.time DESC
+            LIMIT 100
+            """)
+
     logs = cur.fetchall()
+
+    print(logs[:20])
+    print("TOTAL LOGS =", len(logs))
+
+ 
     return jsonify(logs)
 
 
+# gate_logs.uid = users.rfid_uid  
 
 
-from flask import render_template
-
-@app.route("/register_card")
-def register_card():
-    return render_template("register_card.html")
 
 
 @app.route("/test")
@@ -5155,6 +5220,25 @@ def users_page():
 @app.route("/worker")
 def worker_page():
     return render_template("worker.html")
+
+
+
+@app.route("/admin_gate")
+def admin_gate_page():
+    return render_template("admin_gate.html")
+
+
+
+@app.route("/register_card")
+def register_card_page():
+    return render_template("register_card.html")
+
+
+@app.route("/gate_logs")
+def gate_logs_page():
+    return render_template("gate_logs.html")
+
+          
 
 
 
