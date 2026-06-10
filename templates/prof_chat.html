@@ -133,29 +133,27 @@
 
 
     <script>
-        const api = "";
-        const socket = io();
+        const api="";
+        const socket=io();
 
         const instructor_id = Number(localStorage.getItem("user_id"));
+        let conversation_id=null;
 
-        let conversation_id = null;
-        let selectedStudentId = null;
 
+        const profId = localStorage.getItem("user_id");
         const profName = localStorage.getItem("user_name");
         const profImage = localStorage.getItem("user_image");
         const profRole = localStorage.getItem("user_role");
 
         document.addEventListener("DOMContentLoaded", () => {
-
-            if (!profName || profRole !== "Instructor") {
-                window.location.href = "/";
-                return;
+            if(!profName || profRole !== "Instructor"){
+            window.location.href = "login.html";
+            return;
             }
 
             document.getElementById("ProfessorName").textContent = profName;
-
             const pic = document.getElementById("profilePic");
-            pic.src = profImage ? `${api}/${profImage}` : "/uploads/default.png";
+            pic.src = profImage ? `/${profImage}` : `/uploads/default.png`;
 
             loadStudents();
 
@@ -163,21 +161,30 @@
                 if (e.key === "Enter") sendMessage();
             });
 
+            conversation_id = null; // 🔥 يبدأ فاضي
+
+            setInterval(() => {
+                console.log("Checking unread...");
+                fetch(api + `/instructor/${instructor_id}/unread_count`)
+                .then(res => res.json())
+                .then(data => {
+                    console.log("Unread:", data.unread);
+                    document.getElementById("notifBadge").innerText =
+                        data.unread > 0 ? data.unread : "";
+                });
+            }, 5000);
         });
 
 
-        // =========================
-        // STUDENTS
-        // =========================
-
-        function loadStudents() {
+        // ================= LOAD STUDENTS =================
+        function loadStudents(){
 
             Promise.all([
-                fetch(`${api}/instructor/${instructor_id}/students`)
-                .then(r => r.json()),
+                fetch(api + `/instructor/${instructor_id}/students`)
+                    .then(res=>res.json()),
 
-                fetch(`${api}/instructor/${instructor_id}/unread_by_conversation`)
-                .then(r => r.json())
+                fetch(api + `/instructor/${instructor_id}/unread_by_conversation`)
+                    .then(res=>res.json())
             ])
             .then(([students, unreadData]) => {
 
@@ -196,66 +203,36 @@
                     div.className = "user-item";
 
                     div.innerHTML = `
-                        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px">
-
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px">
+                            
                             <div style="display:flex;align-items:center;gap:10px">
-
-                                <img
-                                    src="${item.image ? api + '/' + item.image : '/uploads/default.png'}"
-                                    style="width:40px;height:40px;border-radius:50%;object-fit:cover"
-                                >
-
+                                <img src="${item.image ? '/' + item.image : '/uploads/admin.png'}">
+                                    style="width:35px;height:35px;border-radius:50%">
                                 <span>${item.name}</span>
-
                             </div>
 
-                            ${
-                                unreadCount > 0
-                                ?
-                                `<span style="
-                                    background:red;
-                                    color:white;
-                                    border-radius:50%;
-                                    padding:3px 8px;
-                                    font-size:12px;
-                                ">
+                            ${unreadCount > 0 ? 
+                                `<span style="background:red;color:white;border-radius:50%;padding:2px 6px;font-size:12px;">
                                     ${unreadCount}
-                                </span>`
-                                :
-                                ""
-                            }
-
+                                </span>` 
+                            : ""}
                         </div>
                     `;
 
                     div.onclick = () => {
-                        openConversationWithStudent(
-                            item.id,
-                            item.name
-                        );
+                        openConversationWithStudent(item.id, item.name);
                     };
 
                     list.appendChild(div);
-
                 });
-
             });
-
         }
+        // ================= OPEN CONVERSATION =================
+        function openConversationWithStudent(student_id, student_name){
 
+            document.getElementById("chatHeader").innerText = "💬 " + student_name;
 
-        // =========================
-        // OPEN CHAT
-        // =========================
-
-        function openConversationWithStudent(student_id, student_name) {
-
-            selectedStudentId = student_id;
-
-            document.getElementById("chatHeader").innerText =
-                "💬 " + student_name;
-
-            fetch(`${api}/start_conversation`, {
+            fetch(api + "/start_conversation", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -270,83 +247,73 @@
 
                 conversation_id = data.conversation_id;
 
-                console.log("conversation_id =", conversation_id);
+                localStorage.setItem("conversation_id", conversation_id);  
 
-                socket.emit("join", {
-                    conversation_id: conversation_id
-                });
-
+                document.getElementById("messages").innerHTML = "";
                 loadOldMessages();
 
-                fetch(`${api}/conversation/${conversation_id}/mark_read`, {
+                fetch(api + `/conversation/${conversation_id}/mark_read`, {
                     method: "PUT"
+                }).then(() => {
+                    updateUnread();
                 });
-
-            })
-            .catch(err => {
-                console.error(err);
             });
-
         }
 
-
-        // =========================
-        // LOAD OLD
-        // =========================
-
+        // ================= LOAD OLD MESSAGES =================
         function loadOldMessages() {
 
             if (!conversation_id) return;
 
             const box = document.getElementById("messages");
-            box.innerHTML = "";
+            box.innerHTML = ""; // 🔥 مهم جدًا
 
-            fetch(`${api}/conversation/${conversation_id}`)
+            fetch(api + "/conversation/" + conversation_id)
             .then(res => res.json())
-            .then(messages => {
+            .then(data => {
 
-                box.innerHTML = "";
+                document.getElementById("messages").innerHTML = "";
 
-                messages.forEach(msg => {
-
+                data.forEach(msg => {
                     addMessage(
                         msg.sender_id,
                         msg.message,
                         msg.is_read,
                         msg.file_path
                     );
-
                 });
-
             });
-
         }
 
+        // ================= RECEIVE LIVE =================
+        socket.on("receive_message", function(data){
 
-        // =========================
-        // RECEIVE SOCKET
-        // =========================
+            if(data.conversation_id == conversation_id){
 
-        socket.on("receive_message", function(data) {
+                addMessage(
+                    data.sender_id,
+                    data.message,
+                    false,
+                    data.file_url || null
+                );
 
-            if (Number(data.conversation_id) !== Number(conversation_id))
-                return;
+                // 🔥 الرسالة اتقرت
+                fetch(api + `/conversation/${conversation_id}/mark_read`, {
+                    method: "PUT"
+                }).then(() => {
+                    updateUnread();
+                    loadStudents();
+                });
 
-            addMessage(
-                data.sender_id,
-                data.message,
-                data.is_read || false,
-                data.file_url || null
-            );
-
+            } else {
+                // 🔥 رسالة في شات تاني
+                loadStudents();   // يحدث القائمة
+                updateUnread();   // يحدث الرقم فوق
+            }
         });
 
-
-        // =========================
-        // SEND
-        // =========================
-
-        async function sendMessage() {
+        // ================= SEND MESSAGE =================
+        async function sendMessage(){
 
             if (!conversation_id) {
                 alert("اختاري طالب الأول");
@@ -363,123 +330,83 @@
 
             let file_url = null;
 
-            if (file) {
+            // لو فيه فايل نرفعه الأول
+            if(file){
 
                 const formData = new FormData();
                 formData.append("file", file);
 
-                const uploadRes = await fetch(
-                    `${api}/upload_chat_file`,
-                    {
-                        method: "POST",
-                        body: formData
-                    }
-                );
+                const res = await fetch(api + "/upload_chat_file", {
+                    method: "POST",
+                    body: formData
+                });
 
-                const uploadData = await uploadRes.json();
-
-                file_url = uploadData.file_url;
+                const data = await res.json();
+                file_url = data.file_url;
 
                 fileInput.value = "";
             }
 
-            socket.emit("send_message", {
-                conversation_id: conversation_id,
-                sender_id: instructor_id,
-                message: text || null,
-                file_url: file_url
+            // نبعت الرسالة مرة واحدة عن طريق socket
+            socket.emit("send_message",{
+                conversation_id:conversation_id,
+                sender_id:instructor_id,
+                message:text || null,
+                file_url:file_url
             });
 
             textInput.value = "";
-
         }
 
-
-        // =========================
-        // ADD MESSAGE
-        // =========================
-
-        function addMessage(
-            sender,
-            message,
-            is_read = false,
-            file_url = null
-        ) {
+        // ================= ADD MESSAGE =================
+        function addMessage(sender, message, is_read=false, file_url=null){
 
             const box = document.getElementById("messages");
-
             const div = document.createElement("div");
 
-            div.className =
-                sender == instructor_id
-                ? "message mine"
-                : "message other";
+            if(sender == instructor_id){
+                div.className = "message mine";
+            } else {
+                div.className = "message other";
+            }
 
             let content = "";
 
-            if (file_url) {
+            if(file_url){
 
-                const filePath = `${api}/${file_url}`;
+                const filePath = `${api}/static/uploads/${file_url}`;
 
-                if (file_url.match(/\.(jpg|jpeg|png|gif)$/i)) {
-
-                    content = `
-                        <img
-                            src="${filePath}"
-                            style="
-                                max-width:200px;
-                                border-radius:10px;
-                            "
-                        >
-                    `;
-
+                if(file_url.match(/\.(jpg|jpeg|png|gif)$/i)){
+                    content = `<img src="${filePath}" 
+                                style="max-width:200px;border-radius:8px;">`;
                 } else {
-
-                    content = `
-                        <a href="${filePath}" target="_blank">
-                            📎 Download File
-                        </a>
-                    `;
+                    content = `<a href="${filePath}" target="_blank">
+                                📎 Download File
+                            </a>`;
                 }
 
             } else {
-
-                content = message || "";
-
+                content = message;
             }
 
-            if (sender == instructor_id) {
-
-                div.innerHTML =
-                    content +
-                    (is_read ? " ✔✔" : " ✔");
-
+            if(sender == instructor_id){
+                const seenIcon = is_read ? " ✔✔" : " ✔";
+                div.innerHTML = content + seenIcon;
             } else {
-
                 div.innerHTML = content;
-
             }
 
             box.appendChild(div);
-
             box.scrollTop = box.scrollHeight;
         }
 
-
-        // =========================
-        // FILE NAME
-        // =========================
-
-        document.getElementById("fileInput")
-        .addEventListener("change", function() {
-
+        
+        document.getElementById("fileInput").addEventListener("change", function(){
             const file = this.files[0];
-
             document.getElementById("fileName").innerText =
                 file ? file.name : "";
-
         });
     </script>
-    <script src="{{ url_for('static', filename='notifications.js') }}"></script>
+    <script src="notifications.js"></script>
 </body>
 </html>

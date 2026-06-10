@@ -4599,13 +4599,13 @@ def snapshot(filename):
 
 ###################Chat########################
 
+
 @app.route('/start_conversation', methods=['POST'])
 def start_conversation():
     data = request.get_json()
     student_id = data.get('student_id')
     instructor_id = data.get('instructor_id')
 
-    db = get_db()
     cur = db.cursor(dictionary=True)
 
     # تأكد إنها مش موجودة
@@ -4627,32 +4627,32 @@ def start_conversation():
     return jsonify({"conversation_id": cur.lastrowid}), 200
 
 
-@app.route("/conversation/<int:conversation_id>/mark_read", methods=["PUT"])
-def mark_as_read_chat(conversation_id):
-    db = get_db()
-    cur = db.cursor()
+@app.route('/conversation/<int:id>')
+def get_messages(id):
+
+    db = get_db()  # 🔥 افتحي connection جديد
+    cur = db.cursor(dictionary=True)
 
     cur.execute("""
         SELECT * FROM messages
         WHERE conversation_id = %s
-    """, (conversation_id,))
+    """, (id,))
 
-    messages = cur.fetchall()
+    messages = cur.fetchall()  # 🔥 مهم
 
-    cur.close()
-    db.close()
+    cur.close()   # 🔥 اقفلي cursor
+    db.close()    # 🔥 اقفلي connection
 
-    return jsonify(messages)        
+    return jsonify(messages)           
 
 
 def get_db():
     import mysql.connector
     return mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        database=DB_NAME,
-        port=DB_PORT
+        host="localhost",
+        user="root",
+        password="",
+        database="smart_campus_new"
     )
 
 @app.route('/student/<int:student_id>/instructors')
@@ -4767,7 +4767,6 @@ def student_unread_count(student_id):
 
 @app.route('/instructor/<int:instructor_id>/unread_by_conversation')
 def unread_by_conversation(instructor_id):
-    db = get_db()
     cur = db.cursor(dictionary=True)
 
     cur.execute("""
@@ -4812,32 +4811,8 @@ def get_instructor_conversations(instructor_id):
 
 
 
-@app.route("/conversation/<int:conversation_id>", methods=["GET"])
-def get_messages(conversation_id):
-
-    db = get_db()
-    cur = db.cursor(dictionary=True)
-
-    cur.execute("""
-        SELECT *
-        FROM messages
-        WHERE conversation_id=%s
-        ORDER BY sent_at
-    """, (conversation_id,))
-
-    messages = cur.fetchall()
-
-    cur.close()
-    db.close()
-
-    return jsonify(messages)
-
-
-    
-
 @app.route('/student/<int:student_id>/unread_by_conversation')
 def student_unread_by_conversation(student_id):
-    db = get_db()
     cur = db.cursor(dictionary=True)
 
     cur.execute("""
@@ -4879,11 +4854,10 @@ def handle_send_message(data):
     import mysql.connector
 
     db = mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        database=DB_NAME,
-        port=DB_PORT
+        host="localhost",
+        user="root",
+        password="",
+        database="smart_campus_new"
     )
 
     cur = db.cursor()
@@ -4916,8 +4890,7 @@ def handle_send_message(data):
 @socketio.on("join")
 def on_join(data):
     conversation_id = str(data.get("conversation_id"))
-    print("JOIN ROOM:", conversation_id)
-    join_room(conversation_id)  
+    join_room(conversation_id)      
 
 
 
@@ -4942,6 +4915,333 @@ def unread_count(instructor_id):
     db.close()
 
     return jsonify({"unread": result['unread']})
+
+
+# @app.route('/start_conversation', methods=['POST'])
+# def start_conversation():
+#     data = request.get_json()
+#     student_id = data.get('student_id')
+#     instructor_id = data.get('instructor_id')
+
+#     db = get_db()
+#     cur = db.cursor(dictionary=True)
+
+#     # تأكد إنها مش موجودة
+#     cur.execute("""
+#         SELECT id FROM conversations
+#         WHERE student_id=%s AND instructor_id=%s
+#     """, (student_id, instructor_id))
+#     existing = cur.fetchone()
+
+#     if existing:
+#         return jsonify({"conversation_id": existing['id']}), 200
+
+#     cur.execute("""
+#         INSERT INTO conversations (student_id, instructor_id)
+#         VALUES (%s, %s)
+#     """, (student_id, instructor_id))
+#     db.commit()
+
+#     return jsonify({"conversation_id": cur.lastrowid}), 200
+
+
+# @app.route("/conversation/<int:conversation_id>/mark_read", methods=["PUT"])
+# def mark_as_read_chat(conversation_id):
+#     db = get_db()
+#     cur = db.cursor()
+
+#     cur.execute("""
+#         SELECT * FROM messages
+#         WHERE conversation_id = %s
+#     """, (conversation_id,))
+
+#     messages = cur.fetchall()
+
+#     cur.close()
+#     db.close()
+
+#     return jsonify(messages)        
+
+
+# def get_db():
+#     import mysql.connector
+#     return mysql.connector.connect(
+#         host=DB_HOST,
+#         user=DB_USER,
+#         password=DB_PASSWORD,
+#         database=DB_NAME,
+#         port=DB_PORT
+#     )
+
+# @app.route('/student/<int:student_id>/instructors')
+# def get_student_instructors(student_id):
+
+#     db = get_db()
+#     cur = db.cursor(dictionary=True)
+
+#     cur.execute("""
+#         SELECT DISTINCT 
+#             u.id,
+#             u.name,
+#             u.image
+#         FROM student_courses sc
+#         JOIN course c ON sc.course_id = c.id
+#         JOIN users u ON c.instructor_id = u.id
+#         WHERE sc.student_id = %s
+#     """, (student_id,))
+
+#     result = cur.fetchall()
+
+#     cur.close()
+#     db.close()
+
+#     return jsonify(result)
+
+
+
+
+# @app.route('/instructor/<int:instructor_id>/students')
+# def get_instructor_students(instructor_id):
+
+#     db = get_db()
+#     cur = db.cursor(dictionary=True)
+
+#     cur.execute("""
+#         SELECT DISTINCT 
+#             u.id,
+#             u.name,
+#             u.image
+#         FROM course c
+#         JOIN student_courses sc ON c.id = sc.course_id
+#         JOIN users u ON sc.student_id = u.id
+#         WHERE c.instructor_id = %s
+#     """, (instructor_id,))
+
+#     result = cur.fetchall()
+
+#     cur.close()
+#     db.close()
+
+#     return jsonify(result)
+
+
+
+
+# @app.route('/conversation/<int:conversation_id>/mark_read', methods=['PUT'])
+# def mark_as_read(conversation_id):
+#     cur = db.cursor()
+#     cur.execute("""
+#         UPDATE messages
+#         SET is_read = TRUE
+#         WHERE conversation_id = %s
+#     """, (conversation_id,))
+#     db.commit()
+#     return jsonify({"status": "updated"})
+
+
+
+# @app.route('/student/<int:student_id>/unread_count')
+# def student_unread_count(student_id):
+
+#     db = get_db()
+#     cur = db.cursor(dictionary=True)
+
+#     cur.execute("""
+#         SELECT COUNT(*) AS unread
+#         FROM messages m
+#         JOIN conversations c ON m.conversation_id = c.id
+#         WHERE c.student_id = %s
+#         AND m.is_read = FALSE
+#         AND m.sender_id != %s
+#     """, (student_id, student_id))
+
+#     result = cur.fetchone()   # 👈 مهم جدًا
+
+#     cur.close()               # 👈 مهم جدًا
+#     db.close()                # 👈 مهم جدًا
+
+#     return jsonify({"unread": result['unread']})
+
+
+
+
+# @app.route('/instructor/<int:instructor_id>/unread_by_conversation')
+# def unread_by_conversation(instructor_id):
+#     db = get_db()
+#     cur = db.cursor(dictionary=True)
+
+#     cur.execute("""
+#         SELECT c.id AS conversation_id,
+#                COUNT(m.id) AS unread
+#         FROM conversations c
+#         LEFT JOIN messages m 
+#             ON c.id = m.conversation_id
+#             AND m.is_read = FALSE
+#             AND m.sender_id != %s
+#         WHERE c.instructor_id = %s
+#         GROUP BY c.id
+#     """, (instructor_id, instructor_id))
+
+#     return jsonify(cur.fetchall())
+
+
+
+# @app.route('/instructor/<int:instructor_id>/conversations')
+# def get_instructor_conversations(instructor_id):
+
+#     db = get_db()
+#     cur = db.cursor(dictionary=True)
+
+#     cur.execute("""
+#         SELECT c.id AS conversation_id,
+#                u.id,
+#                u.name,
+#                u.image
+#         FROM conversations c
+#         JOIN users u ON c.student_id = u.id
+#         WHERE c.instructor_id = %s
+#     """, (instructor_id,))
+
+#     result = cur.fetchall()
+
+#     cur.close()
+#     db.close()
+
+#     return jsonify(result)
+
+
+
+
+# @app.route("/conversation/<int:conversation_id>", methods=["GET"])
+# def get_messages(conversation_id):
+
+#     db = get_db()
+#     cur = db.cursor(dictionary=True)
+
+#     cur.execute("""
+#         SELECT *
+#         FROM messages
+#         WHERE conversation_id=%s
+#         ORDER BY sent_at
+#     """, (conversation_id,))
+
+#     messages = cur.fetchall()
+
+#     cur.close()
+#     db.close()
+
+#     return jsonify(messages)
+
+
+    
+
+# @app.route('/student/<int:student_id>/unread_by_conversation')
+# def student_unread_by_conversation(student_id):
+#     db = get_db()
+#     cur = db.cursor(dictionary=True)
+
+#     cur.execute("""
+#         SELECT c.id AS conversation_id,
+#                COUNT(m.id) AS unread
+#         FROM conversations c
+#         LEFT JOIN messages m 
+#             ON c.id = m.conversation_id
+#             AND m.is_read = FALSE
+#             AND m.sender_id != %s
+#         WHERE c.student_id = %s
+#         GROUP BY c.id
+#     """, (student_id, student_id))
+
+#     return jsonify(cur.fetchall())
+
+
+# @app.route('/upload_chat_file', methods=['POST'])
+# def upload_chat_file():
+
+#     file = request.files.get('file')
+
+#     if not file:
+#         return jsonify({"error": "No file"}), 400
+
+#     filename = secure_filename(file.filename)
+
+#     save_path = os.path.join("static/uploads", filename)
+#     file.save(save_path)
+
+#     return jsonify({
+#         "file_url": filename
+#     })
+
+
+# @socketio.on("send_message")
+# def handle_send_message(data):
+
+#     import mysql.connector
+
+#     db = mysql.connector.connect(
+#         host=DB_HOST,
+#         user=DB_USER,
+#         password=DB_PASSWORD,
+#         database=DB_NAME,
+#         port=DB_PORT
+#     )
+
+#     cur = db.cursor()
+
+#     conversation_id = data.get("conversation_id")
+#     sender_id = data.get("sender_id")
+#     message = data.get("message")
+#     file_url = data.get("file_url")
+
+#     cur.execute("""
+#         INSERT INTO messages
+#         (conversation_id, sender_id, message, file_path, is_read)
+#         VALUES (%s, %s, %s, %s, FALSE)
+#     """, (conversation_id, sender_id, message, file_url))
+
+#     db.commit()
+
+#     cur.close()
+#     db.close()
+
+#     socketio.emit("receive_message", {
+#         "conversation_id": conversation_id,
+#         "sender_id": sender_id,
+#         "message": message,
+#         "file_url": file_url
+#     }, room=str(conversation_id))
+
+
+
+# @socketio.on("join")
+# def on_join(data):
+#     conversation_id = str(data.get("conversation_id"))
+#     print("JOIN ROOM:", conversation_id)
+#     join_room(conversation_id)  
+
+
+
+# @app.route('/instructor/<int:instructor_id>/unread_count')
+# def unread_count(instructor_id):
+
+#     db = get_db()
+#     cur = db.cursor(dictionary=True)
+
+#     cur.execute("""
+#         SELECT COUNT(*) AS unread
+#         FROM messages m
+#         JOIN conversations c ON m.conversation_id = c.id
+#         WHERE c.instructor_id = %s
+#         AND m.is_read = FALSE
+#         AND m.sender_id != %s
+#     """, (instructor_id, instructor_id))
+
+#     result = cur.fetchone()
+
+#     cur.close()
+#     db.close()
+
+#     return jsonify({"unread": result['unread']})
 
 
 #######Robot#################

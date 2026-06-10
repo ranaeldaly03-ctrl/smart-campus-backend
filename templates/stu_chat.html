@@ -111,13 +111,13 @@
         conversation_id = null; // 🔥 يبدأ فاضي
 
             if (!name || role !== "Student") {
-                window.location.href = "/";
+                window.location.href = "login.html";
                 return;
             }
 
             document.getElementById("studentName").textContent = name;
             document.getElementById("profilePic").src =
-                image ? `${api}/${image}` : `/uploads/admin.png`
+                image ? `/${image}` : `/uploads/admin.png`;
 
             loadInstructors();
 
@@ -160,7 +160,7 @@
                             ${unreadCount>0 ? 'background:#f0f8ff;' : ''}">
                             
                             <div style="display:flex;align-items:center;gap:10px">
-                                <img src="${inst.image ? api + '/' + inst.image : '/uploads/admin.png'}"
+                                <img src="${item.image ? '/' + item.image : '/uploads/admin.png'}">
                                     style="width:35px;height:35px;border-radius:50%">
                                 
                                 <span style="font-weight:${unreadCount>0?'bold':'normal'}">
@@ -278,9 +278,7 @@
 
         // ================== SEND MESSAGE ==================
         async function sendMessage(){
-            
-            console.log("conversation_id =", conversation_id);
-            
+
             if (!conversation_id) {
                 alert("اختاري محادثة الأول");
                 return;
@@ -383,6 +381,6 @@
         });
                 
     </script>
-    <script src="{{ url_for('static', filename='notifications.js') }}"></script>
+    <script src="notifications.js"></script>
 </body>
 </html>
