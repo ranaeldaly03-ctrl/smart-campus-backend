@@ -4653,7 +4653,7 @@ def get_db():
         user=DB_USER,
         password=DB_PASSWORD,
         database=DB_NAME,
-        port=DB_POR
+        port=DB_PORT
     )
 
 @app.route('/student/<int:student_id>/instructors')
@@ -4859,7 +4859,7 @@ def handle_send_message(data):
         user=DB_USER,
         password=DB_PASSWORD,
         database=DB_NAME,
-        port=DB_POR
+        port=DB_PORT
     )
 
     cur = db.cursor()
