@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_schedule.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <title>Gate Access Logs History</title>
+</head>
+<body>
+    <div class="menu">
+        <ul>
+            <li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="adminName"></h2>
+            </li>
+            <li>
+                <a href=/admin">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="/users">
+                    <i class="fas fa-user-group"></i>
+                    <p>Users</p>
+                </a>
+            </li>
+            <li>
+                <a href="/student_requests">
+                    <i class="fas fa-user-check"></i>
+                    <p>Student Requests</p>
+                </a>
+            </li>
+            <li>
+                <a href="/courses">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="/admin_schedule">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            <li>
+                <a href="/admin_gate">
+                    <i class="fas fa-torii-gate"></i>
+                    <p>Gate</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="/gate_logs">
+                    <i class="fas fa-dungeon"></i>
+                    <p>gate_logs</p>
+                </a>
+            </li>
+            <li>
+                <a href="/register_card">
+                    <i class="fas fa-id-card"></i>
+                    <p>Cards</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="/">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <div class="title">
+            <h1>🚪 Gate Access Logs</h1>
+        </div>
+<div style="margin:15px 0;">
+    <input
+        type="text"
+        id="searchInput"
+        placeholder="Search Name / UID / Role"
+        style="
+            width:300px;
+            padding:8px;
+            border:1px solid #ccc;
+            border-radius:6px;
+        "
+    >
+</div>
+        <button onclick="loadLogs()">Refresh</button>
+    
+
+  
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>User Name</th>
+                    <th>Role</th>
+                    <th>RFID UID</th>
+                    <th>Status</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody id="logsTable">
+            </tbody>
+        </table>
+
+    </div>
+
+
+
+
+    <script>
+
+        const API_BASE = "";
+        let isSearching = false;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const name = localStorage.getItem("user_name");
+            const role = localStorage.getItem("user_role");
+            const image = localStorage.getItem("user_image");
+
+
+            if (!name || role !== "Admin") {
+                window.location.href = "login.html";
+                return;
+            }
+               
+            document.getElementById("adminName").textContent = name;
+                
+            const profilePic = document.getElementById("profilePic");
+            
+             if (image && image !== "null" && image !== ""){
+                    document.getElementById("profilePic").src = `${API_BASE}/${image}`;
+                } else {
+                    document.getElementById("profilePic").src = `$/uploads/admin.png`;
+                }
+
+            
+        });
+
+        function loadLogs() {
+            fetch(`/get_logs`)
+            .then(response => response.json())
+            .then(data => {
+
+    console.log("FIRST LOG =", data[0]);
+
+    const table =
+    document.getElementById("logsTable");
+
+    table.innerHTML = "";
+
+    data.forEach(log => {
+
+        console.log("NAME =", log.name);
+
+        const row = `
+        <tr>
+            <td>${log.name || "-"}</td>
+            <td>${log.role || "-"}</td>
+            <td>${log.uid || "-"}</td>
+            <td>${log.status || "-"}</td>
+            <td>${log.time || "-"}</td>
+        </tr>
+        `;
+
+        table.innerHTML += row;
+    }); 
+    applySearch();
+})
+            .catch(error => {
+                console.error("Error loading logs:", error);
+            });
+        }
+
+        // تحميل أول مرة
+        loadLogs();
+
+        // تحديث كل 3 ثواني
+        setInterval(() => {
+
+    if(!isSearching)
+    {
+        loadLogs();
+    }
+
+}, 3000);
+
+    </script>
+
+<script>
+document
+.getElementById("searchInput")
+ .addEventListener("keyup", applySearch) 
+// {
+
+// //     let value = this.value.toLowerCase();
+
+// //     let rows =
+// //     document.querySelectorAll("#logsTable tr");
+
+// //     rows.forEach(row => {
+
+//         let text =
+//         row.innerText.toLowerCase();
+
+//         if(text.includes(value))
+//         {
+//             row.style.display = "";
+//         }
+//         else
+//         {
+//             row.style.display = "none";
+//         }
+
+//     });
+// });
+
+ function applySearch() {
+
+    let value =
+    document.getElementById("searchInput")
+    .value
+    .toLowerCase();
+
+    let rows =
+    document.querySelectorAll("#logsTable tr");
+
+    rows.forEach(row => {
+
+        let text =
+        row.innerText.toLowerCase();
+
+        row.style.display =
+        text.includes(value)
+        ? ""
+        : "none";
+    });
+}
+</script>
+</body>
+</html>

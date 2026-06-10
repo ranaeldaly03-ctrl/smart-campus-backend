@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='users.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <title>Admin Gate</title>
+</head>
+<body>
+
+<div class="menu">
+  <ul>
+    <li class="profile">
+      <div class="img-box">
+        <img id="profilePic" src="" alt="profile">
+      </div>
+      <h2 id="adminName"></h2>
+    </li>
+
+    <li><a href="/admin"><i class="fas fa-home"></i><p>Dashboard</p></a></li>
+    <li><a href="/users"><i class="fas fa-user-group"></i><p>Users</p></a></li>
+    <li>
+        <a href="/student_requests">
+          <i class="fas fa-user-check"></i>
+          <p>Student Requests</p>
+        </a>
+    </li>
+    <li><a href="/courses"><i class="fa fa-list-alt"></i><p>Courses</p></a></li>
+    <li><a href="/admin_schedule"><i class="fas fa-table"></i><p>Tables</p></a></li>
+
+    <li>
+      <a class="active" href="/admin_gate">
+        <i class="fas fa-torii-gate"></i>
+        <p>Gate</p>
+      </a>
+    </li>
+    <li>
+                <a href="/gate_logs">
+                    <i class="fas fa-dungeon"></i>
+                    <p>gate_logs</p>
+                </a>
+            </li>
+            <li>
+                <a href="/register_card">
+                    <i class="fas fa-id-card"></i>
+                    <p>Cards</p>
+                </a>
+            </li>
+
+    <li class="log-out">
+      <a href="/"><i class="fas fa-sign-out"></i><p>Log Out</p></a>
+    </li>
+  </ul>
+</div>
+
+<div class="users">
+  <div class="title_info">
+      <i class="fas fa-torii-gate"></i>
+      <h1 class="user">Gate System</h1>
+  </div>
+  <div class="container">
+     
+<div style="margin-bottom:15px;">
+
+ <input
+    type="text"
+    id="searchInput"
+    placeholder="Search Name / Student ID / UID"
+    onkeyup="searchCards()">
+
+
+
+</div>
+<h2>Registered Cards</h2>
+<div id="successMsg"
+     style="
+     display:none;
+     color:green;
+     font-weight:bold;
+     margin-bottom:10px;">
+</div>
+<table border="1" width="100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Role</th>
+            <th>UID</th>
+            <th>Access</th>
+            <th>Switch</th>
+        </tr>
+    </thead>
+
+    <tbody id="cardsTable">
+
+    </tbody>
+ 
+    </div>
+  </div>
+</div>
+
+  <script>
+    const API_BASE = "";
+
+    // ===== Auth check =====
+    document.addEventListener("DOMContentLoaded", () => {
+      const name = localStorage.getItem("user_name");
+      const role = localStorage.getItem("user_role");
+      const image = localStorage.getItem("user_image");
+
+      if (!name || role !== "Admin") {
+        window.location.href = "login.html";
+        return;
+      }
+
+      document.getElementById("adminName").textContent = name;
+      document.getElementById("profilePic").src =
+        image ? `/${image}` : `/uploads/admin.png`;
+
+      loadPolicy();
+
+    });
+
+    // ===== Helpers =====
+    const msg = document.getElementById("msg");
+    const currentModeDiv = document.getElementById("currentMode");
+
+    function showMsg(text, ok=true){
+      msg.textContent = text;
+      msg.style.color = ok ? "green" : "red";
+    }
+
+    
+
+    
+   
+    function updateStatus() {
+
+    let studentId = document.getElementById("studentId").value;
+    let override = document.getElementById("override").value;
+
+    fetch(`${API_BASE}/update_override`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            student_id: studentId,
+            override_access: override
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert("Override updated successfully");
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Error updating override");
+    });
+}
+  </script>
+<script>
+
+function loadCards(){
+
+    fetch("/get_cards")
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        const table =
+        document.getElementById("cardsTable");
+
+        table.innerHTML = "";
+
+        data.forEach(card => {
+
+            const accessText =
+            card.gate_access == 1
+            ? "Allowed"
+            : "Blocked";
+
+            const buttonText =
+            card.gate_access == 1
+            ? "Block"
+            : "Allow";
+
+            const row = `
+                <tr>
+
+                  <td>${card.id}</td>
+                  <td>${card.name || "-"}</td>
+                  <td>${card.role || "-"}</td>
+                  <td>${card.rfid_uid}</td>
+                  <td>${accessText}</td>
+                   
+                       <td>
+
+                          <button
+                          onclick="toggleAccess(
+                          '${card.rfid_uid}',
+                          ${card.gate_access})">
+
+                          ${buttonText}
+
+                          </button>
+
+                          <button
+                          onclick="deleteCard(
+                          '${card.rfid_uid}')"
+                          style="margin-left:5px;background:red;color:white;">
+
+                          Delete
+
+                          </button>
+
+                      </td>
+
+                </tr>
+            `;
+
+            table.innerHTML += row;
+
+        });
+
+    });
+
+}
+
+loadCards();
+
+function toggleAccess(uid, currentAccess){
+
+    const newAccess =
+    currentAccess == 1 ? 0 : 1;
+
+    fetch(
+        "/update_gate_access",
+        {
+            method: "POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body: JSON.stringify({
+                uid: uid,
+                access: newAccess
+            })
+        }
+    )
+
+    .then(response => response.json())
+
+    .then(data => {
+
+    document.getElementById("successMsg").innerHTML =
+    "Card updated successfully";
+
+    document.getElementById("successMsg").style.display =
+    "block";
+
+    setTimeout(() => {
+
+        document.getElementById("successMsg").style.display =
+        "none";
+
+    }, 2000);
+
+    loadCards();
+
+    if(document.getElementById("searchInput").value != ""){
+        searchCards();
+    }
+
+});
+
+}   // <-- اقفل toggleAccess هنا
+
+
+function searchCards(){
+
+    let input =
+    document.getElementById("searchInput")
+    .value
+    .toLowerCase();
+
+    let rows =
+    document.querySelectorAll("#cardsTable tr");
+
+    rows.forEach(row => {
+
+        let text =
+        row.textContent.toLowerCase();
+
+        if(text.includes(input))
+            row.style.display = "";
+        else
+            row.style.display = "none";
+
+    });
+
+}
+function deleteCard(uid)
+{
+    console.log("DELETE UID =", uid);
+
+    fetch("/delete_card", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            uid: uid
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        console.log(data);
+        loadCards();
+    });
+}
+</script>
+</body>
+</html>
