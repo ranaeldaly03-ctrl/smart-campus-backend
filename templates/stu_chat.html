@@ -278,7 +278,9 @@
 
         // ================== SEND MESSAGE ==================
         async function sendMessage(){
-
+            
+            console.log("conversation_id =", conversation_id);
+            
             if (!conversation_id) {
                 alert("اختاري محادثة الأول");
                 return;
