@@ -265,7 +265,12 @@
 
                 console.log("conversation_id =", conversation_id);
 
+                socket.emit("join", {
+                    conversation_id: conversation_id
+                });
+
                 loadOldMessages();
+                
                 fetch(api + `/conversation/${conversation_id}/mark_read`,{
                     method:"PUT"
                 });
@@ -371,6 +376,13 @@
                 message:text || null,
                 file_url:file_url
             });
+
+            addMessage(
+                instructor_id,
+                text,
+                false,
+                file_url
+            );
 
             textInput.value = "";
         }

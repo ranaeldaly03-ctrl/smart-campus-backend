@@ -4916,7 +4916,8 @@ def handle_send_message(data):
 @socketio.on("join")
 def on_join(data):
     conversation_id = str(data.get("conversation_id"))
-    join_room(conversation_id)      
+    print("JOIN ROOM:", conversation_id)
+    join_room(conversation_id)  
 
 
 
