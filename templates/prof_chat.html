@@ -251,23 +251,23 @@
                     instructor_id: instructor_id
                 })
             })
-            .then(res => res.json())
-            .then(data => {
+            .then(res => {
+                console.log("status =", res.status);
+                return res.text();
+            })
+            .then(txt => {
+                console.log("response =", txt);
 
-                console.log("API Response:", data);
+                const data = JSON.parse(txt);
 
                 conversation_id = data.conversation_id;
 
-                localStorage.setItem("conversation_id", conversation_id);  
+                console.log("conversation_id =", conversation_id);
 
-                document.getElementById("messages").innerHTML = "";
                 loadOldMessages();
-
-                fetch(api + `/conversation/${conversation_id}/mark_read`, {
-                    method: "PUT"
-                }).then(() => {
-                    updateUnread();
-                });
+            })
+            .catch(err => {
+                console.error("ERROR =", err);
             });
         }
 
