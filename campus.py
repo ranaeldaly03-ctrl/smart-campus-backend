@@ -4754,21 +4754,21 @@ def snapshot(filename):
 
 
 
-@app.route('/student/<int:student_id>/unread_count')
-def student_unread_count(student_id):
-    cur = db.cursor()
+# @app.route('/student/<int:student_id>/unread_count')
+# def student_unread_count(student_id):
+#     cur = db.cursor()
 
-    cur.execute("""
-        SELECT COUNT(*)
-        FROM messages m
-        JOIN conversations c ON m.conversation_id = c.id
-        WHERE c.student_id = %s
-        AND m.is_read = FALSE
-        AND m.sender_id != %s
-    """, (student_id, student_id))
+#     cur.execute("""
+#         SELECT COUNT(*)
+#         FROM messages m
+#         JOIN conversations c ON m.conversation_id = c.id
+#         WHERE c.student_id = %s
+#         AND m.is_read = FALSE
+#         AND m.sender_id != %s
+#     """, (student_id, student_id))
 
-    count = cur.fetchone()[0]
-    return jsonify({"unread": count})
+#     count = cur.fetchone()[0]
+#     return jsonify({"unread": count})
 
 
 
