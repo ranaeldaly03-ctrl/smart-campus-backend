@@ -49,7 +49,12 @@ except Exception as e:
 
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+# socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    async_mode="threading"
+)
 
 
 UPLOAD_FOLDER = "static/uploads"
@@ -4651,15 +4656,15 @@ def snapshot(filename):
 #     return jsonify(messages)           
 
 
-# def get_db():
-#     import mysql.connector
-#     return mysql.connector.connect(
-#         host=DB_HOST,
-#         user=DB_USER,
-#         password=DB_PASSWORD,
-#         database=DB_NAME,
-#         port=DB_PORT
-#     )
+def get_db():
+    import mysql.connector
+    return mysql.connector.connect(
+        host=DB_HOST,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        port=DB_PORT
+    )
 
 # @app.route('/student/<int:student_id>/instructors')
 # def get_student_instructors(student_id):
@@ -4956,14 +4961,19 @@ def start_conversation():
     return jsonify({"conversation_id": cur.lastrowid}), 200
 
 
-@app.route("/conversation/<int:conversation_id>/mark_read", methods=["PUT"])
-def mark_as_read_chat(conversation_id):
+
+
+@app.route('/conversation/<int:conversation_id>')
+def get_conversation_messages(conversation_id):
+
     db = get_db()
-    cur = db.cursor()
+    cur = db.cursor(dictionary=True)
 
     cur.execute("""
-        SELECT * FROM messages
+        SELECT *
+        FROM messages
         WHERE conversation_id = %s
+        ORDER BY created_at ASC
     """, (conversation_id,))
 
     messages = cur.fetchall()
@@ -4971,18 +4981,29 @@ def mark_as_read_chat(conversation_id):
     cur.close()
     db.close()
 
-    return jsonify(messages)        
+    return jsonify(messages)
 
 
-def get_db():
-    import mysql.connector
-    return mysql.connector.connect(
-        host=DB_HOST,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        database=DB_NAME,
-        port=DB_PORT
-    )
+
+
+
+@app.route('/conversation/<int:conversation_id>/mark_read', methods=['PUT'])
+def mark_as_read_chat(conversation_id):
+    db = get_db()
+    cur = db.cursor()
+
+    cur.execute("""
+        UPDATE messages
+        SET is_read = TRUE
+        WHERE conversation_id = %s
+    """, (conversation_id,))
+
+    db.commit()
+
+    cur.close()
+    db.close()
+
+    return jsonify({"status": "updated"})
 
 @app.route('/student/<int:student_id>/instructors')
 def get_student_instructors(student_id):
