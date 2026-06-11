@@ -4964,7 +4964,7 @@ def start_conversation():
 
 
 @app.route('/conversation/<int:conversation_id>')
-def get_conversation_messages(conversation_id):
+def get_conversation(conversation_id):
 
     db = get_db()
     cur = db.cursor(dictionary=True)
@@ -4973,7 +4973,7 @@ def get_conversation_messages(conversation_id):
         SELECT *
         FROM messages
         WHERE conversation_id = %s
-        ORDER BY created_at ASC
+        ORDER BY id ASC
     """, (conversation_id,))
 
     messages = cur.fetchall()
@@ -4986,9 +4986,9 @@ def get_conversation_messages(conversation_id):
 
 
 
-
 @app.route('/conversation/<int:conversation_id>/mark_read', methods=['PUT'])
 def mark_as_read_chat(conversation_id):
+
     db = get_db()
     cur = db.cursor()
 
@@ -5004,6 +5004,8 @@ def mark_as_read_chat(conversation_id):
     db.close()
 
     return jsonify({"status": "updated"})
+
+    
 
 @app.route('/student/<int:student_id>/instructors')
 def get_student_instructors(student_id):
