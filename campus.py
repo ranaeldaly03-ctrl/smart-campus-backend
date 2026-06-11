@@ -52,9 +52,7 @@ CORS(app)
 # socketio = SocketIO(app, cors_allowed_origins="*")
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*",
-    async_mode="threading"
-)
+    cors_allowed_origins="*")
 
 
 UPLOAD_FOLDER = "static/uploads"
@@ -5005,7 +5003,7 @@ def mark_as_read_chat(conversation_id):
 
     return jsonify({"status": "updated"})
 
-    
+
 
 @app.route('/student/<int:student_id>/instructors')
 def get_student_instructors(student_id):
