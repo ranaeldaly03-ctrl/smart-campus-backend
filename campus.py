@@ -3849,38 +3849,81 @@ def schedule_ai(student_id):
     }
 
 import re
+from deep_translator import GoogleTranslator
 
-def summarize_lecture_ai(text):
+def summarize_lecture_ai(message):
 
-    if not text:
+    if not message:
         return {
             "reply": "❌ ارفع المحاضرة أولاً"
         }
 
-    sentences = re.split(r'(?<=[.!?؟])\s+', text)
+    text = re.sub(
+        r"(لخص|ملخص|summarize|تلخيص)",
+        "",
+        str(message),
+        flags=re.IGNORECASE
+    ).strip()
 
-    sentences = [s.strip() for s in sentences if len(s.strip()) > 30]
-
-    if len(sentences) == 0:
+    if len(text) < 40:
         return {
-            "reply": "❌ لا يوجد نص كافٍ للتلخيص"
+            "reply": "❗ Please provide enough text so I can summarize it."
         }
 
-    if len(sentences) <= 5:
-        summary_sentences = sentences
+    sentences = re.split(r'(?<=[.!؟])\s+', text)
+
+    if len(sentences) <= 2:
+        selected = sentences
     else:
-        summary_sentences = [
+        selected = [
             sentences[0],
-            sentences[len(sentences)//4],
             sentences[len(sentences)//2],
-            sentences[(3*len(sentences))//4],
             sentences[-1]
         ]
 
-    summary = "\n\n• " + "\n\n• ".join(summary_sentences)
+    arabic_summary = []
+    english_summary = []
+
+    for s in selected:
+
+        try:
+            ar = GoogleTranslator(
+                source='auto',
+                target='ar'
+            ).translate(s)
+        except:
+            ar = s
+
+        arabic_summary.append(ar)
+
+        try:
+            en = GoogleTranslator(
+                source='auto',
+                target='en'
+            ).translate(s)
+        except:
+            en = s
+
+        english_summary.append(en)
+
+    ar_text = "\n- ".join(arabic_summary)
+    en_text = "\n- ".join(english_summary)
+
+    reply = f"""
+📚 ملخص المحاضرة | Lecture Summary
+
+🇦🇪 الملخص بالعربي:
+- {ar_text}
+
+🇬🇧 Summary in English:
+- {en_text}
+
+✅ Conclusion:
+This summary was generated automatically.
+"""
 
     return {
-        "reply": f"📚 ملخص المحاضرة:\n{summary}"
+        "reply": reply
     }
 
 
