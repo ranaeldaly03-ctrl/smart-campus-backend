@@ -3848,68 +3848,58 @@ def schedule_ai(student_id):
         "reply": reply
     }
 
-import re
 
-def summarize_lecture_ai(message):
 
-    if not message:
+
+from openai import OpenAI
+import os
+
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY")
+)
+
+def summarize_lecture_ai(text):
+
+    if not text:
         return {
             "reply": "❌ ارفع المحاضرة أولاً"
         }
 
-    text = re.sub(
-        r"(لخص|ملخص|summarize|تلخيص)",
-        "",
-        str(message),
-        flags=re.IGNORECASE
-    ).strip()
+    try:
 
-    if len(text) < 40:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """
+                    You are an educational assistant.
+
+                    Summarize the lecture.
+
+                    Return:
+                    1. Arabic Summary
+                    2. English Summary
+                    3. Key Points
+                    4. Short Conclusion
+                    """
+                },
+                {
+                    "role": "user",
+                    "content": text[:12000]
+                }
+            ],
+            temperature=0.3
+        )
+
         return {
-            "reply": "❗ Please provide enough text so I can summarize it."
+            "reply": response.choices[0].message.content
         }
 
-    sentences = re.split(r'(?<=[.!؟])\s+', text)
-
-    sentences = [
-        s.strip()
-        for s in sentences
-        if len(s.strip()) > 30
-    ]
-
-    if not sentences:
+    except Exception as e:
         return {
-            "reply": "❌ لا يوجد نص كافٍ للتلخيص"
+            "reply": f"❌ Summary Error: {str(e)}"
         }
-
-    # توزيع الجمل على كامل المحاضرة
-    step = max(1, len(sentences) // 15)
-
-    selected = []
-
-    for i in range(0, len(sentences), step):
-
-        sentence = sentences[i].strip()
-
-        if len(sentence) > 30:
-            selected.append(sentence)
-
-    # حد أقصى 15 نقطة
-    selected = selected[:15]
-
-    summary = "\n\n• " + "\n\n• ".join(selected)
-
-    reply = f"""
-📚 Lecture Summary
-
-{summary}
-
-✅ Summary generated successfully.
-"""
-
-    return {
-        "reply": reply
-    }
 
 
 # import re
@@ -3976,14 +3966,56 @@ def generate_quiz_ai(student_id):
     text = last_uploaded_text.get(student_id)
 
     if not text:
-        return {"reply":"❌ ارفع المحاضرة أولاً"}
+        return {
+            "reply": "❌ ارفع المحاضرة أولاً"
+        }
 
-    questions = generate_mcq(text,5)
-    print("QUIZ DATA:", questions)
-    return {
-        "reply":"🎓 عملتلك امتحان",
-        "questions":questions
-    }
+    try:
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """
+Generate exactly 5 MCQ questions.
+
+Return ONLY JSON.
+
+Format:
+
+[
+ {
+   "question":"...",
+   "options":["A","B","C","D"],
+   "answer":"A"
+ }
+]
+"""
+                },
+                {
+                    "role": "user",
+                    "content": text[:12000]
+                }
+            ],
+            temperature=0.4
+        )
+
+        import json
+
+        questions = json.loads(
+            response.choices[0].message.content
+        )
+
+        return {
+            "reply": "🎓 Quiz Generated Successfully",
+            "questions": questions
+        }
+
+    except Exception as e:
+        return {
+            "reply": f"❌ Quiz Error: {str(e)}"
+        }
     
 
 
@@ -4074,12 +4106,18 @@ def ai_chat():
         result = schedule_ai(student_id)
 
     elif intent == "summary":
+
         lecture = last_uploaded_text.get(student_id)
+
         result = summarize_lecture_ai(lecture)
 
+        return jsonify(result)
+
     elif intent == "quiz":
+
         quiz = generate_quiz_ai(student_id)
-        return jsonify(quiz)   
+
+        return jsonify(quiz)  
 
     else:
         result = "🤖 اسألني عن الحضور، الدرجات، المواد، الجدول أو اختبرني"
