@@ -3856,7 +3856,6 @@ from deep_translator import GoogleTranslator
 
 
 def summarize_lecture_ai(message):
-    # نشيل كلمات الطلب
     text = re.sub(r"(لخص|ملخص|summarize|تلخيص)", "", message, flags=re.IGNORECASE).strip()
 
     if len(text) < 40:
@@ -4014,7 +4013,14 @@ def ai_chat():
         result = schedule_ai(student_id)
 
     elif intent == "summary":
+
         lecture = last_uploaded_text.get(student_id)
+
+        if not lecture:
+            return jsonify({
+                "reply": "❌ ارفع المحاضرة PDF أولاً ثم اطلب التلخيص"
+            })
+
         result = summarize_lecture_ai(lecture)
 
     elif intent == "quiz":
@@ -4024,9 +4030,11 @@ def ai_chat():
     else:
         result = "🤖 اسألني عن الحضور، الدرجات، المواد، الجدول أو اختبرني"
 
-    return jsonify({
-        "reply": result
-    })
+    if isinstance(result, dict):
+        return jsonify(result)
+
+    return jsonify({"reply": result})
+    
 
 
 
