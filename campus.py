@@ -3848,53 +3848,41 @@ def schedule_ai(student_id):
         "reply": reply
     }
 
+import google.generativeai as genai
+import os
 
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-import re
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 def summarize_lecture_ai(text):
 
     if not text:
+        return {"reply": "❌ ارفع المحاضرة أولاً"}
+
+    try:
+        response = model.generate_content(
+            f"""
+            Summarize the following lecture in Arabic.
+
+            Give:
+            - Main ideas
+            - Important points
+            - Short conclusion
+
+            Lecture:
+            {text[:15000]}
+            """
+        )
+
         return {
-            "reply": "❌ ارفع المحاضرة أولاً"
+            "reply": response.text
         }
 
-    text = re.sub(
-        r"(لخص|ملخص|summarize|تلخيص)",
-        "",
-        str(text),
-        flags=re.IGNORECASE
-    ).strip()
-
-    if len(text) < 40:
+    except Exception as e:
         return {
-            "reply": "❗ Please provide enough text so I can summarize it."
+            "reply": f"❌ Summary Error: {str(e)}"
         }
-
-    sentences = re.split(r'(?<=[.!؟])\s+', text)
-
-    if len(sentences) <= 3:
-        selected = sentences
-    else:
-        selected = [
-            sentences[0],
-            sentences[len(sentences)//2],
-            sentences[-1]
-        ]
-
-    summary = "\n- ".join(selected)
-
-    reply = f"""
-📚 Text Summary
-
-- {summary}
-
-✅ Summary generated successfully.
-"""
-
-    return {
-        "reply": reply
-    }
 
 
 # import re
