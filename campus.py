@@ -49,10 +49,11 @@ except Exception as e:
 
 app = Flask(__name__)
 CORS(app)
-# socketio = SocketIO(app, cors_allowed_origins="*")
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*")
+    cors_allowed_origins="*",
+    async_mode="gevent"
+)
 
 
 UPLOAD_FOLDER = "static/uploads"
