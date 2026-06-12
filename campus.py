@@ -3848,41 +3848,40 @@ def schedule_ai(student_id):
         "reply": reply
     }
 
-import google.generativeai as genai
-import os
-
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-model = genai.GenerativeModel("gemini-2.0-flash")
+import re
 
 def summarize_lecture_ai(text):
 
     if not text:
-        return {"reply": "❌ ارفع المحاضرة أولاً"}
-
-    try:
-        response = model.generate_content(
-            f"""
-            Summarize the following lecture in Arabic.
-
-            Give:
-            - Main ideas
-            - Important points
-            - Short conclusion
-
-            Lecture:
-            {text[:15000]}
-            """
-        )
-
         return {
-            "reply": response.text
+            "reply": "❌ ارفع المحاضرة أولاً"
         }
 
-    except Exception as e:
+    sentences = re.split(r'(?<=[.!?؟])\s+', text)
+
+    sentences = [s.strip() for s in sentences if len(s.strip()) > 30]
+
+    if len(sentences) == 0:
         return {
-            "reply": f"❌ Summary Error: {str(e)}"
+            "reply": "❌ لا يوجد نص كافٍ للتلخيص"
         }
+
+    if len(sentences) <= 5:
+        summary_sentences = sentences
+    else:
+        summary_sentences = [
+            sentences[0],
+            sentences[len(sentences)//4],
+            sentences[len(sentences)//2],
+            sentences[(3*len(sentences))//4],
+            sentences[-1]
+        ]
+
+    summary = "\n\n• " + "\n\n• ".join(summary_sentences)
+
+    return {
+        "reply": f"📚 ملخص المحاضرة:\n{summary}"
+    }
 
 
 # import re
@@ -4047,14 +4046,7 @@ def ai_chat():
         result = schedule_ai(student_id)
 
     elif intent == "summary":
-
         lecture = last_uploaded_text.get(student_id)
-
-        if not lecture:
-            return jsonify({
-                "reply": "❌ ارفع المحاضرة PDF أولاً ثم اطلب التلخيص"
-            })
-
         result = summarize_lecture_ai(lecture)
 
     elif intent == "quiz":
