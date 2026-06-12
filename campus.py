@@ -3849,7 +3849,6 @@ def schedule_ai(student_id):
     }
 
 import re
-from deep_translator import GoogleTranslator
 
 def summarize_lecture_ai(message):
 
@@ -3872,54 +3871,40 @@ def summarize_lecture_ai(message):
 
     sentences = re.split(r'(?<=[.!؟])\s+', text)
 
-    if len(sentences) <= 2:
-        selected = sentences
-    else:
-        selected = [
-            sentences[0],
-            sentences[len(sentences)//2],
-            sentences[-1]
-        ]
+    sentences = [
+        s.strip()
+        for s in sentences
+        if len(s.strip()) > 30
+    ]
 
-    arabic_summary = []
-    english_summary = []
+    if not sentences:
+        return {
+            "reply": "❌ لا يوجد نص كافٍ للتلخيص"
+        }
 
-    for s in selected:
+    # توزيع الجمل على كامل المحاضرة
+    step = max(1, len(sentences) // 15)
 
-        try:
-            ar = GoogleTranslator(
-                source='auto',
-                target='ar'
-            ).translate(s)
-        except:
-            ar = s
+    selected = []
 
-        arabic_summary.append(ar)
+    for i in range(0, len(sentences), step):
 
-        try:
-            en = GoogleTranslator(
-                source='auto',
-                target='en'
-            ).translate(s)
-        except:
-            en = s
+        sentence = sentences[i].strip()
 
-        english_summary.append(en)
+        if len(sentence) > 30:
+            selected.append(sentence)
 
-    ar_text = "\n- ".join(arabic_summary)
-    en_text = "\n- ".join(english_summary)
+    # حد أقصى 15 نقطة
+    selected = selected[:15]
+
+    summary = "\n\n• " + "\n\n• ".join(selected)
 
     reply = f"""
-📚 ملخص المحاضرة | Lecture Summary
+📚 Lecture Summary
 
-🇦🇪 الملخص بالعربي:
-- {ar_text}
+{summary}
 
-🇬🇧 Summary in English:
-- {en_text}
-
-✅ Conclusion:
-This summary was generated automatically.
+✅ Summary generated successfully.
 """
 
     return {
