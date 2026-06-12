@@ -3850,24 +3850,30 @@ def schedule_ai(student_id):
 
 
 
-
 import re
-from deep_translator import GoogleTranslator
 
+def summarize_lecture_ai(text):
 
-def summarize_lecture_ai(message):
-    text = re.sub(r"(لخص|ملخص|summarize|تلخيص)", "", message, flags=re.IGNORECASE).strip()
+    if not text:
+        return {
+            "reply": "❌ ارفع المحاضرة أولاً"
+        }
+
+    text = re.sub(
+        r"(لخص|ملخص|summarize|تلخيص)",
+        "",
+        str(text),
+        flags=re.IGNORECASE
+    ).strip()
 
     if len(text) < 40:
         return {
             "reply": "❗ Please provide enough text so I can summarize it."
         }
 
-    
     sentences = re.split(r'(?<=[.!؟])\s+', text)
 
-    
-    if len(sentences) <= 2:
+    if len(sentences) <= 3:
         selected = sentences
     else:
         selected = [
@@ -3876,36 +3882,76 @@ def summarize_lecture_ai(message):
             sentences[-1]
         ]
 
-    arabic_summary = []
-    english_summary = []
+    summary = "\n- ".join(selected)
 
-    for s in selected:
-        
-        ar = GoogleTranslator(source='auto', target='ar').translate(s)
-        arabic_summary.append(ar)
+    reply = f"""
+📚 Text Summary
 
-        
-        en = GoogleTranslator(source='auto', target='en').translate(s)
-        english_summary.append(en)
+- {summary}
 
-    ar_text = "\n- ".join(arabic_summary)
-    en_text = "\n- ".join(english_summary)
-
-    reply = f"""📚 **ملخص النص | Text Summary**
-
-🇦🇪 **الملخص بالعربي:**
-- {ar_text}
-
-🇬🇧 **Summary in English:**
-- {en_text}
-
-✅ **Conclusion:**
-This summary was generated using extractive summarization and automatic translation.
+✅ Summary generated successfully.
 """
 
     return {
         "reply": reply
     }
+
+
+# import re
+# from deep_translator import GoogleTranslator
+
+
+# def summarize_lecture_ai(message):
+#     text = re.sub(r"(لخص|ملخص|summarize|تلخيص)", "", message, flags=re.IGNORECASE).strip()
+
+#     if len(text) < 40:
+#         return {
+#             "reply": "❗ Please provide enough text so I can summarize it."
+#         }
+
+    
+#     sentences = re.split(r'(?<=[.!؟])\s+', text)
+
+    
+#     if len(sentences) <= 2:
+#         selected = sentences
+#     else:
+#         selected = [
+#             sentences[0],
+#             sentences[len(sentences)//2],
+#             sentences[-1]
+#         ]
+
+#     arabic_summary = []
+#     english_summary = []
+
+#     for s in selected:
+        
+#         ar = GoogleTranslator(source='auto', target='ar').translate(s)
+#         arabic_summary.append(ar)
+
+        
+#         en = GoogleTranslator(source='auto', target='en').translate(s)
+#         english_summary.append(en)
+
+#     ar_text = "\n- ".join(arabic_summary)
+#     en_text = "\n- ".join(english_summary)
+
+#     reply = f"""📚 **ملخص النص | Text Summary**
+
+# 🇦🇪 **الملخص بالعربي:**
+# - {ar_text}
+
+# 🇬🇧 **Summary in English:**
+# - {en_text}
+
+# ✅ **Conclusion:**
+# This summary was generated using extractive summarization and automatic translation.
+# """
+
+#     return {
+#         "reply": reply
+#     }
 
 
 last_uploaded_text = {}
@@ -4033,7 +4079,9 @@ def ai_chat():
     if isinstance(result, dict):
         return jsonify(result)
 
-    return jsonify({"reply": result})
+    return jsonify({
+        "reply": result
+    })
     
 
 
