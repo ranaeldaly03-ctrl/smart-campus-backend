@@ -89,7 +89,7 @@
     <button onclick="quickAsk('درجاتي عاملة ايه؟')">📈 الدرجات</button>
     <button onclick="quickAsk('أسجل مواد ايه؟')">🎓 المواد</button>
     <button onclick="quickAsk('جدولي ايه؟')">📅 الجدول</button>
-    <button onclick="quickAsk('لخص محاضرة Professional Ethics')">📚 لخص محاضرة</button>
+    <button onclick="quickAsk('لخص المحاضره')">📚 لخص محاضرة</button>
     <button onclick="generateQuiz()">Generate Quiz</button>
 </div>
 
@@ -287,7 +287,7 @@
             questions.forEach((q,index)=>{
 
                 let html = `
-                <div class="question" data-answer="${q.correct}">
+                <div class="question" data-answer="${q.answer}">
                     <h4>${index+1}. ${q.question}</h4>
                 `;
 
@@ -373,6 +373,10 @@
             questions.forEach((q,index)=>{
 
                 const selected = document.querySelector(`input[name="q${index}"]:checked`);
+
+
+                console.log("SELECTED VALUE =", selected.value);
+                console.log("DATA ANSWER =", correct);
 
                 if(!selected) return;
 
