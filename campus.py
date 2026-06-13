@@ -3853,6 +3853,7 @@ def schedule_ai(student_id):
 
 from openai import OpenAI
 import os
+import traceback
 
 print("API KEY =", os.getenv("OPENAI_API_KEY"))
 
@@ -3899,9 +3900,11 @@ def summarize_lecture_ai(text):
         }
 
     except Exception as e:
-        print("OPENAI ERROR:", repr(e))
+        print("OPENAI ERROR:")
+        traceback.print_exc()
+
         return {
-            "reply": f"❌ Summary Error: {str(e)}"
+            "reply": f"❌ Summary Error: {type(e).__name__}: {str(e)}"
         }
 
 
