@@ -4587,8 +4587,8 @@ def start_registration():
         })
 
     current_registration = {
-        "user_id": user_id
-
+        "user_id": user["id"],
+        "name": user["name"]
     }
     registration_mode = True
     print("WAITING FOR USER:", user_id)
@@ -4600,43 +4600,43 @@ def start_registration():
 
 
     
-
 @app.route("/scan_rfid", methods=["POST"])
 def scan_rfid():
+
     global current_registration
 
     data = request.get_json()
+
     uid = data.get("uid").upper()
 
-    db = get_db()
-    cur = db.cursor(dictionary=True)
+    if not current_registration:
+        return jsonify({
+            "access": False,
+            "message": "No registration request"
+        })
 
-    if current_registration:
+    user_id = current_registration["user_id"]
 
-        student_id = current_registration["student_id"]
-        name = current_registration["name"]
+    cur = db.cursor()
 
-        # هل الطالب موجود؟
-        cur.execute("SELECT * FROM students WHERE student_id = %s", (student_id,))
-        student = cur.fetchone()
+    cur.execute("""
+        UPDATE users
+        SET rfid_uid=%s
+        WHERE id=%s
+    """, (uid, user_id))
 
-        if student:
-            cur.execute(
-                "UPDATE students SET rfid_uid = %s WHERE student_id = %s",
-                (uid, student_id)
-            )
-        else:
-            cur.execute(
-                "INSERT INTO students (student_id, name, rfid_uid) VALUES (%s, %s, %s)",
-                (student_id, name, uid)
-            )
+    db.commit()
 
-        db.commit()
-        current_registration = {}
+    cur.close()
 
-        return jsonify({"access": True})
+    current_registration = None
 
-    return jsonify({"access": False})
+    return jsonify({
+        "access": True,
+        "message": "Card Linked Successfully"
+    })
+
+    
 
  
 
