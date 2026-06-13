@@ -4561,7 +4561,7 @@ def register_rfid():
 
 
 
-current_registration_id = None
+# current_registration_id = None
 
 
 @app.route("/start_registration", methods=["POST"])
