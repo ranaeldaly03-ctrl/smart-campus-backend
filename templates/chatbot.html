@@ -290,14 +290,17 @@
                     <h4>${index + 1}. ${q.question}</h4>
                 `;
 
-                q.options.forEach(opt=>{
+                q.options.forEach((opt,i)=>{
+
+                    const letter = ["A","B","C","D"][i];
+
                     html += `
                     <label>
                         <input type="radio"
                             name="q${index}"
-                            value="${opt}">
+                            value="${letter}">
                         ${opt}
-                    </label><br><br>
+                    </label><br>
                     `;
                 });
 
