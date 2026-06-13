@@ -4379,12 +4379,15 @@ def registration_status():
     global current_registration
     global registration_mode
 
-    return jsonify({
-        "waiting":
-        current_registration is not None,
-
-        "registration_mode":
+    print(
+        "STATUS:",
+        current_registration,
         registration_mode
+    )
+
+    return jsonify({
+        "waiting": current_registration is not None,
+        "registration_mode": registration_mode
     })
 
 
@@ -4599,11 +4602,11 @@ def start_registration():
 
 
 
-    
 @app.route("/scan_rfid", methods=["POST"])
 def scan_rfid():
 
     global current_registration
+    global registration_mode
 
     data = request.get_json()
 
@@ -4630,6 +4633,7 @@ def scan_rfid():
     cur.close()
 
     current_registration = None
+    registration_mode = False   # ← أضيفي السطر ده
 
     return jsonify({
         "access": True,
@@ -4655,7 +4659,8 @@ def get_logs():
                 gate_logs.time
             FROM gate_logs
             LEFT JOIN users
-            ON TRIM(gate_logs.uid) = TRIM(users.rfid_uid)
+            ON gate_logs.uid COLLATE utf8mb4_general_ci =
+                users.rfid_uid COLLATE utf8mb4_general_ci
             ORDER BY gate_logs.time DESC
             LIMIT 100
             """)
