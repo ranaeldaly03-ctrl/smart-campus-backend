@@ -276,10 +276,9 @@
 
             const box = document.getElementById("quizBox");
 
-            // 👇 مهم جدًا
             box.innerHTML = "";
 
-            if (!questions || questions.length === 0) {
+            if(!questions || questions.length === 0){
                 box.innerHTML = "<p>❌ مفيش أسئلة</p>";
                 return;
             }
@@ -288,31 +287,71 @@
 
                 let html = `
                 <div class="question" data-answer="${q.answer}">
-                    <h4>${index+1}. ${q.question}</h4>
+                    <h4>${index + 1}. ${q.question}</h4>
                 `;
 
                 q.options.forEach(opt=>{
                     html += `
                     <label>
-                        <input type="radio" name="q${index}" value="${opt}">
+                        <input type="radio"
+                            name="q${index}"
+                            value="${opt}">
                         ${opt}
-                    </label><br>
+                    </label><br><br>
                     `;
                 });
 
-                html += "</div>";
-
+                html += `</div><hr>`;
                 box.innerHTML += html;
-
             });
 
-            // 👇 الزرار في الآخر بس
             box.innerHTML += `
-                <br>
                 <button onclick="submitQuiz()" class="submit-btn">
                     Submit Quiz
                 </button>
             `;
+        }
+
+
+        function submitQuiz(){
+
+            const questions = document.querySelectorAll(".question");
+
+            let score = 0;
+            let total = questions.length;
+
+            if(total === 0){
+                addMessage("❌ مفيش أسئلة", "bot");
+                return;
+            }
+
+            questions.forEach((q,index)=>{
+
+                const selected =
+                    document.querySelector(`input[name="q${index}"]:checked`);
+
+                if(!selected){
+                    return;
+                }
+
+                const correct =
+                    q.getAttribute("data-answer");
+
+                const userAnswer =
+                    selected.value.trim().toLowerCase();
+
+                const correctAnswer =
+                    correct.trim().toLowerCase();
+
+                console.log("USER =", userAnswer);
+                console.log("CORRECT =", correctAnswer);
+
+                if(userAnswer === correctAnswer){
+                    score++;
+                }
+            });
+
+            addMessage(`🎓 نتيجتك: ${score} / ${total}`, "bot");
         }
 
 
@@ -358,45 +397,45 @@
         }
 
 
-        function submitQuiz(){
+        // function submitQuiz(){
 
-            const questions = document.querySelectorAll(".question");
+        //     const questions = document.querySelectorAll(".question");
 
-            let score = 0;
-            let total = questions.length;
+        //     let score = 0;
+        //     let total = questions.length;
 
-            if(total === 0){
-                addMessage("❌ مفيش أسئلة", "bot");
-                return;
-            }
+        //     if(total === 0){
+        //         addMessage("❌ مفيش أسئلة", "bot");
+        //         return;
+        //     }
 
-            questions.forEach((q,index)=>{
+        //     questions.forEach((q,index)=>{
 
-                const selected = document.querySelector(`input[name="q${index}"]:checked`);
+        //         const selected = document.querySelector(`input[name="q${index}"]:checked`);
 
 
-                console.log("SELECTED VALUE =", selected.value);
-                console.log("DATA ANSWER =", correct);
+        //         console.log("SELECTED VALUE =", selected.value);
+        //         console.log("DATA ANSWER =", correct);
 
-                if(!selected) return;
+        //         if(!selected) return;
 
-                const correct = q.getAttribute("data-answer");
+        //         const correct = q.getAttribute("data-answer");
 
-                // 👇 الحل هنا
-                const userAnswer = selected.value.trim().toLowerCase();
-                const correctAnswer = correct.trim().toLowerCase();
+        //         // 👇 الحل هنا
+        //         const userAnswer = selected.value.trim().toLowerCase();
+        //         const correctAnswer = correct.trim().toLowerCase();
 
-                console.log("USER:", userAnswer);
-                console.log("CORRECT:", correctAnswer);
+        //         console.log("USER:", userAnswer);
+        //         console.log("CORRECT:", correctAnswer);
 
-                if(userAnswer === correctAnswer){
-                    score++;
-                }
+        //         if(userAnswer === correctAnswer){
+        //             score++;
+        //         }
 
-            });
+        //     });
 
-            addMessage(`🎓 نتيجتك: ${score} / ${total}`, "bot");
-        }
+        //     addMessage(`🎓 نتيجتك: ${score} / ${total}`, "bot");
+        // }
     </script>
 
 </body>
