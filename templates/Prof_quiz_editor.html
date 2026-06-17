@@ -113,6 +113,31 @@
 
         <hr>
 
+        <div class="row">
+            <label>Quiz Title</label>
+            <input id="quizTitle" type="text">
+        </div>
+
+        <div class="row">
+            <label>Total Marks</label>
+            <input id="quizTotal" type="number">
+        </div>
+
+        <div class="row">
+            <label>Duration</label>
+            <input id="quizDuration" type="number">
+        </div>
+
+        <div class="row">
+            <label>Start Time</label>
+            <input id="quizStart" type="datetime-local">
+        </div>
+
+        <div class="row">
+            <label>End Time</label>
+            <input id="quizEnd" type="datetime-local">
+        </div>
+
         <h3>Questions</h3>
         <div id="questionsArea"></div>
 
@@ -273,7 +298,12 @@
             return;
         }
         const quiz = await res.json();
-        document.getElementById('quizTitle').value = quiz.title || '';
+        const titleInput =document.getElementById('quizTitle');
+
+        if(titleInput){
+            titleInput.value =
+            quiz.title || '';
+        }
         // if page had dueDate field use it; optional
         const dueInput = document.getElementById('dueDate');
         if(dueInput && quiz.due_date) dueInput.value = quiz.due_date;
