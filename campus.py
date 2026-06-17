@@ -1410,13 +1410,19 @@ def get_student_quizzes(student_id):
                 a.course_id,
                 c.course_name,
                 a.title,
-
-                COUNT(q.id) AS question_count,
-
+                a.question_count,
                 a.duration,
                 a.start_time,
                 a.end_time,
-                a.created_at
+                a.created_at,
+
+                (
+                    SELECT grade
+                    FROM grades g
+                    WHERE g.student_id=%s
+                    AND g.assignment_id=a.id
+                    LIMIT 1
+                ) AS student_grade
 
             FROM assignment a
 
@@ -1426,16 +1432,11 @@ def get_student_quizzes(student_id):
             JOIN student_courses sc
             ON sc.course_id = a.course_id
 
-            LEFT JOIN quiz_question q
-            ON q.assignment_id = a.id
-
             WHERE sc.student_id=%s
             AND a.type='Quiz'
 
-            GROUP BY a.id
-
             ORDER BY a.created_at DESC
-            """, (student_id,))
+            """,(student_id, student_id))
         quizzes = cur.fetchall()
         cur.close()
         return jsonify(quizzes), 200
@@ -2304,6 +2305,7 @@ def add_assignment():
             total_mark = request.form.get('total_mark') or 0
             file_obj = request.files.get('file')
         else:
+
             data = request.get_json(force=True, silent=True) or {}
 
             course_id = data.get('course_id')
@@ -2313,9 +2315,7 @@ def add_assignment():
             due_date = data.get('due_date')
             total_mark = data.get('total_mark') or 0
 
-            duration = data.get('duration')
-            start_time = data.get('start_time')
-            end_time = data.get('end_time')
+            file_obj = None
 
         # ===============================
         # تحويل التاريخ (المهم 👈)
@@ -2487,6 +2487,24 @@ def submit_quiz_exam():
 
     student_id = data["student_id"]
     assignment_id = data["assignment_id"]
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+    SELECT *
+    FROM grades
+    WHERE student_id=%s
+    AND assignment_id=%s
+    """,
+    (student_id, assignment_id))
+
+    old_grade = cur.fetchone()
+
+    if old_grade:
+        return jsonify({
+            "message":"You already submitted this quiz"
+        }), 400
+    
+
     answers = data["answers"]
 
     cur = db.cursor(dictionary=True)
