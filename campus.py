@@ -4680,6 +4680,7 @@ def scan_rfid():
 def get_logs():
 
     day = request.args.get("day")
+    hour = request.args.get("hour")
 
     cur = db.cursor(dictionary=True, buffered=True)
 
@@ -4696,11 +4697,19 @@ def get_logs():
            users.rfid_uid COLLATE utf8mb4_general_ci
     """
 
+    conditions = []
     params = []
 
     if day:
-        query += " WHERE DATE(gate_logs.time)=%s "
+        conditions.append("DATE(gate_logs.time)=%s")
         params.append(day)
+
+    if hour:
+        conditions.append("TIME_FORMAT(gate_logs.time,'%H:%i')=%s")
+        params.append(hour)
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
 
     query += """
         ORDER BY gate_logs.time DESC

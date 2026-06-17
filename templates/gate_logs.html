@@ -93,7 +93,10 @@
     >
 </div>
         <div style="margin-bottom:15px;">
+
             <input type="date" id="filterDate">
+
+            <input type="time" id="filterTime">
 
             <button onclick="loadLogs()">
                 Filter
@@ -102,6 +105,7 @@
             <button onclick="clearFilter()">
                 Show All
             </button>
+
         </div>
 
         <button onclick="loadLogs()">Refresh</button>
@@ -159,13 +163,23 @@
 
         async function loadLogs(){
 
-            const date =
-                document.getElementById("filterDate").value;
+            const date = document.getElementById("filterDate").value;
 
-            let url = "/get_logs";
+            const time = document.getElementById("filterTime").value;
+
+            let url = "/get_logs?";
 
             if(date){
-                url += "?day=" + date;
+                url += "day=" + date;
+            }
+
+            if(time){
+
+                if(date){
+                    url += "&";
+                }
+
+                url += "hour=" + time;
             }
 
             const response = await fetch(url);
@@ -194,6 +208,7 @@
         function clearFilter(){
 
             document.getElementById("filterDate").value = "";
+            document.getElementById("filterTime").value = "";
 
             loadLogs();
         }
