@@ -106,37 +106,12 @@
         <h3 id="createMsg">Quiz Editor</h3>
 
         <!-- لو حابة تضيف اختيار الكورس لو نحتاجه لاحقًا -->
-        <div class="row" style="display:none;">
+        <!-- <div class="row" style="display:none;">
             <label>Course</label>
             <select id="courseSelect"><option value="">-- choose --</option></select>
-        </div>
+        </div> -->
 
         <hr>
-
-        <div class="row">
-            <label>Quiz Title</label>
-            <input id="quizTitle" type="text">
-        </div>
-
-        <div class="row">
-            <label>Total Marks</label>
-            <input id="quizTotal" type="number">
-        </div>
-
-        <div class="row">
-            <label>Duration</label>
-            <input id="quizDuration" type="number">
-        </div>
-
-        <div class="row">
-            <label>Start Time</label>
-            <input id="quizStart" type="datetime-local">
-        </div>
-
-        <div class="row">
-            <label>End Time</label>
-            <input id="quizEnd" type="datetime-local">
-        </div>
 
         <h3>Questions</h3>
         <div id="questionsArea"></div>
@@ -298,15 +273,15 @@
             return;
         }
         const quiz = await res.json();
-        const titleInput =document.getElementById('quizTitle');
+        // const titleInput =document.getElementById('quizTitle');
 
-        if(titleInput){
-            titleInput.value =
-            quiz.title || '';
-        }
+        // if(titleInput){
+        //     titleInput.value =
+        //     quiz.title || '';
+        // }
         // if page had dueDate field use it; optional
         const dueInput = document.getElementById('dueDate');
-        if(dueInput && quiz.due_date) dueInput.value = quiz.due_date;
+        // if(dueInput && quiz.due_date) dueInput.value = quiz.due_date;
 
         questions = (quiz.questions || []).map(q => ({
             id: q.id || q.question_id || null,
@@ -368,62 +343,62 @@
     }
 
     // ---------------- create quiz handler (no redirect) ----------------
-    async function createQuizHandler(e){
-        e && e.preventDefault();
-        const courseId = document.getElementById('courseSelect')?.value;
-        const title = document.getElementById('quizTitle')?.value?.trim();
-        const due = document.getElementById('dueDate')?.value || null;
-        if(!courseId) return alert("Choose course");
-        if(!title) return alert("Enter title");
+    // async function createQuizHandler(e){
+    //     e && e.preventDefault();
+    //     const courseId = document.getElementById('courseSelect')?.value;
+    //     const title = document.getElementById('quizTitle')?.value?.trim();
+    //     const due = document.getElementById('dueDate')?.value || null;
+    //     if(!courseId) return alert("Choose course");
+    //     if(!title) return alert("Enter title");
 
-        showStatus("Creating quiz...");
-        try {
-        const payload = {
-            course_id: Number(courseId),
-            title: title,
-            description: "Quiz created from editor",
-            type: "Quiz",
-            due_date: due,
-            total_mark: 0
-        };
-        const res = await fetch(`${api}/add_assignment`, {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify(payload)
-        });
-        const text = await res.text().catch(()=>null);
-        let json = null;
-        try { json = text ? JSON.parse(text) : null; } catch(e){}
+    //     showStatus("Creating quiz...");
+    //     try {
+    //     const payload = {
+    //         course_id: Number(courseId),
+    //         title: title,
+    //         description: "Quiz created from editor",
+    //         type: "Quiz",
+    //         due_date: due,
+    //         total_mark: 0
+    //     };
+    //     const res = await fetch(`${api}/add_assignment`, {
+    //         method: "POST",
+    //         headers: {"Content-Type":"application/json"},
+    //         body: JSON.stringify(payload)
+    //     });
+    //     const text = await res.text().catch(()=>null);
+    //     let json = null;
+    //     try { json = text ? JSON.parse(text) : null; } catch(e){}
 
-        if(!res.ok) {
-            showStatus("Error creating quiz: " + (json?.message || text || res.status), true);
-            return;
-        }
+    //     if(!res.ok) {
+    //         showStatus("Error creating quiz: " + (json?.message || text || res.status), true);
+    //         return;
+    //     }
 
-        const createdId = json?.quiz_id || json?.assignment_id || json?.id || json?.insertId || null;
-        if(!createdId){
-            showStatus("Quiz created but server did not return id. Check API.", true);
-            return;
-        }
+    //     const createdId = json?.quiz_id || json?.assignment_id || json?.id || json?.insertId || null;
+    //     if(!createdId){
+    //         showStatus("Quiz created but server did not return id. Check API.", true);
+    //         return;
+    //     }
 
-        // set current id and update UI (no redirect)
-        currentQuizId = createdId;
-        document.getElementById('createMsg') && (document.getElementById('createMsg').textContent = "Editing quiz " + currentQuizId);
+    //     // set current id and update UI (no redirect)
+    //     currentQuizId = createdId;
+    //     document.getElementById('createMsg') && (document.getElementById('createMsg').textContent = "Editing quiz " + currentQuizId);
 
-        // push local questions to server (if any)
-        await flushLocalQuestionsToServer(currentQuizId);
+    //     // push local questions to server (if any)
+    //     await flushLocalQuestionsToServer(currentQuizId);
 
-        // update URL so user can bookmark/share the editor for this quiz
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set('quiz_id', currentQuizId);
-        window.history.replaceState({}, '', newUrl.toString());
+    //     // update URL so user can bookmark/share the editor for this quiz
+    //     const newUrl = new URL(window.location.href);
+    //     newUrl.searchParams.set('quiz_id', currentQuizId);
+    //     window.history.replaceState({}, '', newUrl.toString());
 
-        showStatus("Quiz created and questions saved. You can now add more questions.");
-        } catch(err){
-        console.error(err);
-        showStatus("Network error creating quiz. Check server.", true);
-        }
-    }
+    //     showStatus("Quiz created and questions saved. You can now add more questions.");
+    //     } catch(err){
+    //     console.error(err);
+    //     showStatus("Network error creating quiz. Check server.", true);
+    //     }
+    // }
 
     // ---------------- add question handler ----------------
     async function addQuestionHandler(e){
@@ -494,25 +469,25 @@
     }
 
     // ---------------- load courses into select (optional) ----------------
-    async function loadCoursesIntoSelect(){
-        const select = document.getElementById('courseSelect');
-        if(!select) return;
-        select.innerHTML = '<option value="">-- choose --</option>';
-        try {
-        const res = await fetch(`${api}/instructor/${profId}/courses`);
-        if(!res.ok) return;
-        const list = await res.json();
-        const arr = Array.isArray(list) ? list : (list.courses || list.data || []);
-        arr.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.id ?? c.course_id;
-            opt.textContent = c.course_name ?? c.name ?? `Course ${opt.value}`;
-            select.appendChild(opt);
-        });
-        } catch(e){
-        console.warn("Can't load courses", e);
-        }
-    }
+    // async function loadCoursesIntoSelect(){
+    //     const select = document.getElementById('courseSelect');
+    //     if(!select) return;
+    //     select.innerHTML = '<option value="">-- choose --</option>';
+    //     try {
+    //     const res = await fetch(`${api}/instructor/${profId}/courses`);
+    //     if(!res.ok) return;
+    //     const list = await res.json();
+    //     const arr = Array.isArray(list) ? list : (list.courses || list.data || []);
+    //     arr.forEach(c => {
+    //         const opt = document.createElement('option');
+    //         opt.value = c.id ?? c.course_id;
+    //         opt.textContent = c.course_name ?? c.name ?? `Course ${opt.value}`;
+    //         select.appendChild(opt);
+    //     });
+    //     } catch(e){
+    //     console.warn("Can't load courses", e);
+    //     }
+    // }
 
     // ---------------- init bindings ----------------
     document.addEventListener('DOMContentLoaded', async () => {
@@ -532,7 +507,7 @@
 
         document.getElementById('addQuestionBtn').addEventListener('click', addQuestionHandler);
         document.getElementById('publishQuizBtn').addEventListener('click', publishQuizHandler);
-        document.getElementById('createQuizBtn')?.addEventListener('click', createQuizHandler);
+        // document.getElementById('createQuizBtn')?.addEventListener('click', createQuizHandler);
 
         await loadCoursesIntoSelect();
 

@@ -2122,7 +2122,11 @@ def publish_quiz(quiz_id):
         conn = pool.get_connection() if pool else db
         cur = conn.cursor()
         # your previous code tried to update 'assignments' table; update 'assignment' here
-        cur.execute("UPDATE assignment SET published=1 WHERE id=%s AND type='Quiz'", (quiz_id,))
+        cur.execute("""
+        UPDATE assignment
+        SET published=1
+        WHERE id=%s
+        """, (quiz_id,))
         conn.commit()
         cur.close()
         if pool and conn: conn.close()
@@ -2229,6 +2233,16 @@ def add_quiz_question(assignment_id):
             INSERT INTO quiz_question (assignment_id, q_type, question_text, options, correct_answer, marks)
             VALUES (%s,%s,%s,%s,%s,%s)
         """, (assignment_id, qtype, qtext, json.dumps(options) if options else None, correct, marks))
+        cur.execute("""
+        UPDATE assignment
+        SET question_count =
+        (
+            SELECT COUNT(*)
+            FROM quiz_question
+            WHERE assignment_id=%s
+        )
+        WHERE id=%s
+        """, (assignment_id, assignment_id))
         db.commit()
         qid = cur.lastrowid
         cur.close()
