@@ -2480,8 +2480,8 @@ def quiz_questions(assignment_id):
 
 
 
-@app.route("/submit_quiz", methods=["POST"])
-def submit_quiz():
+@app.route("/submit_quiz_exam", methods=["POST"])
+def submit_quiz_exam():
 
     data = request.get_json()
 
