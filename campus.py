@@ -4646,32 +4646,71 @@ def scan_rfid():
  
 
 
+# @app.route("/get_logs")
+# def get_logs():
+
+#     cur = db.cursor(dictionary=True, buffered=True)
+
+#     cur.execute("""
+#             SELECT
+#                 users.name,
+#                 users.role,
+#                 gate_logs.uid,
+#                 gate_logs.status,
+#                 gate_logs.time
+#             FROM gate_logs
+#             LEFT JOIN users
+#             ON gate_logs.uid COLLATE utf8mb4_general_ci =
+#                 users.rfid_uid COLLATE utf8mb4_general_ci
+#             ORDER BY gate_logs.time DESC
+#             LIMIT 100
+#             """)
+
+#     logs = cur.fetchall()
+
+#     print(logs[:20])
+#     print("TOTAL LOGS =", len(logs))
+
+ 
+#     return jsonify(logs)
+
+
+
 @app.route("/get_logs")
 def get_logs():
 
+    day = request.args.get("day")
+
     cur = db.cursor(dictionary=True, buffered=True)
 
-    cur.execute("""
-            SELECT
-                users.name,
-                users.role,
-                gate_logs.uid,
-                gate_logs.status,
-                gate_logs.time
-            FROM gate_logs
-            LEFT JOIN users
-            ON gate_logs.uid COLLATE utf8mb4_general_ci =
-                users.rfid_uid COLLATE utf8mb4_general_ci
-            ORDER BY gate_logs.time DESC
-            LIMIT 100
-            """)
+    query = """
+        SELECT
+            users.name,
+            users.role,
+            gate_logs.uid,
+            gate_logs.status,
+            gate_logs.time
+        FROM gate_logs
+        LEFT JOIN users
+        ON gate_logs.uid COLLATE utf8mb4_general_ci =
+           users.rfid_uid COLLATE utf8mb4_general_ci
+    """
+
+    params = []
+
+    if day:
+        query += " WHERE DATE(gate_logs.time)=%s "
+        params.append(day)
+
+    query += """
+        ORDER BY gate_logs.time DESC
+        LIMIT 100
+    """
+
+    cur.execute(query, params)
 
     logs = cur.fetchall()
 
-    print(logs[:20])
-    print("TOTAL LOGS =", len(logs))
-
- 
     return jsonify(logs)
 
 

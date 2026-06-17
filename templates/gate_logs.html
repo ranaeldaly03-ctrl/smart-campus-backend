@@ -92,6 +92,18 @@
         "
     >
 </div>
+        <div style="margin-bottom:15px;">
+            <input type="date" id="filterDate">
+
+            <button onclick="loadLogs()">
+                Filter
+            </button>
+
+            <button onclick="clearFilter()">
+                Show All
+            </button>
+        </div>
+
         <button onclick="loadLogs()">Refresh</button>
     
 
@@ -145,39 +157,45 @@
             
         });
 
-        function loadLogs() {
-            fetch(`/get_logs`)
-            .then(response => response.json())
-            .then(data => {
+        async function loadLogs(){
 
-    console.log("FIRST LOG =", data[0]);
+            const date =
+                document.getElementById("filterDate").value;
 
-    const table =
-    document.getElementById("logsTable");
+            let url = "/get_logs";
 
-    table.innerHTML = "";
+            if(date){
+                url += "?day=" + date;
+            }
 
-    data.forEach(log => {
+            const response = await fetch(url);
 
-        console.log("NAME =", log.name);
+            const logs = await response.json();
 
-        const row = `
-        <tr>
-            <td>${log.name || "-"}</td>
-            <td>${log.role || "-"}</td>
-            <td>${log.uid || "-"}</td>
-            <td>${log.status || "-"}</td>
-            <td>${log.time || "-"}</td>
-        </tr>
-        `;
+            const tbody =
+                document.getElementById("logsTable");
 
-        table.innerHTML += row;
-    }); 
-    applySearch();
-})
-            .catch(error => {
-                console.error("Error loading logs:", error);
+            tbody.innerHTML = "";
+
+            logs.forEach(log=>{
+
+                tbody.innerHTML += `
+                <tr>
+                    <td>${log.name || "-"}</td>
+                    <td>${log.role || "-"}</td>
+                    <td>${log.uid}</td>
+                    <td>${log.status}</td>
+                    <td>${log.time}</td>
+                </tr>
+                `;
             });
+        }
+
+        function clearFilter(){
+
+            document.getElementById("filterDate").value = "";
+
+            loadLogs();
         }
 
         // تحميل أول مرة
