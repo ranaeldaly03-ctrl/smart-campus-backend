@@ -2314,6 +2314,9 @@ def add_assignment():
             type_ = data.get('type') or 'Assignment'
             due_date = data.get('due_date')
             total_mark = data.get('total_mark') or 0
+            duration = data.get('duration')
+            start_time = data.get('start_time')
+            end_time = data.get('end_time')
 
             file_obj = None
 
