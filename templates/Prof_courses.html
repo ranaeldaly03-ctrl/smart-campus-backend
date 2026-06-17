@@ -353,7 +353,7 @@
         const createdId = json?.quiz_id || json?.assignment_id || json?.assignmentId || json?.id || null;
         showResponse('Quiz created ✓');
         if(createdId){
-          setTimeout(()=> window.location.href = `/prof_quiz_editor?quiz_id=${createdId}`, 300);
+          setTimeout(()=> window.location.href = `/Prof_quiz_editor?quiz_id=${createdId}`, 300);
         }
       }catch(err){
         console.error(err);

@@ -5769,9 +5769,6 @@ def gate_logs_page():
     return render_template("gate_logs.html")
 
 
-@app.route("/Prof_quiz_editor")
-def prof_quiz_editor():
-    return render_template("Prof_quiz_editor.html")    
 
           
 
