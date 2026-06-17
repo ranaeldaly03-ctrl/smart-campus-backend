@@ -2083,6 +2083,16 @@ def add_question(quiz_id):
         cur = conn.cursor()
         cur.execute("INSERT INTO quiz_question (assignment_id, q_type, question_text, options, correct_answer) VALUES (%s,%s,%s,%s,%s)",
                     (quiz_id, q_type, text, opts_json, correct))
+        cur.execute("""
+        UPDATE assignment
+        SET question_count =
+        (
+            SELECT COUNT(*)
+            FROM quiz_question
+            WHERE assignment_id = %s
+        )
+        WHERE id = %s
+        """, (quiz_id, quiz_id))
         qid = cur.lastrowid
         conn.commit()
         cur.close()

@@ -169,8 +169,8 @@
         container.innerHTML = "";
         quizzes.forEach(q => {
         // defensive defaults
-        const start = q.start_time ? new Date(q.start_time) : null;
-        const end = q.end_time ? new Date(q.end_time) : null;
+        const start = q.start_time;
+        const end = q.end_time;
         const created = q.created_at ? new Date(q.created_at) : null;
         const question_count = q.question_count ?? q.questions ?? 0;
         const duration = q.duration ?? q.time_minutes ?? 0;
@@ -195,8 +195,8 @@
             <h3>${q.title || q.name || "Untitled"}</h3>
             <p><strong>Course:</strong> ${q.course_name || q.course || ''}</p>
             ${created ? `<p><strong>Created:</strong> ${created.toLocaleString()}</p>` : ''}
-            ${start ? `<p><strong>Start:</strong> ${start.toLocaleString()}</p>` : ''}
-            ${end ? `<p><strong>End:</strong> ${end.toLocaleString()}</p>` : ''}
+            ${start ? `<p><strong>Start:</strong> ${start}</p>` : ''}
+            ${end ? `<p><strong>End:</strong> ${end}</p>` : ''}
             <p><strong>Questions:</strong> ${question_count}</p>
             <p><strong>Duration:</strong> ${duration} minutes</p>
             ${
