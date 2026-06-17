@@ -199,7 +199,38 @@
             ${end ? `<p><strong>End:</strong> ${end.toLocaleString()}</p>` : ''}
             <p><strong>Questions:</strong> ${question_count}</p>
             <p><strong>Duration:</strong> ${duration} minutes</p>
-            <button ${disabled ? 'disabled' : ''} onclick="startQuiz(${q.id})">${statusText}</button>
+            ${
+            q.student_grade != null
+
+            ?
+
+            `
+            <div style="
+            background:#d4edda;
+            padding:10px;
+            border-radius:10px;
+            font-weight:bold;
+            color:green;
+            text-align:center;
+            ">
+
+            Your Grade: ${q.student_grade}
+
+            </div>
+            `
+
+            :
+
+            `
+            <button
+            ${disabled ? 'disabled' : ''}
+            onclick="startQuiz(${q.id})">
+
+            ${statusText}
+
+            </button>
+            `
+            }
             </div>
         `;
         });
