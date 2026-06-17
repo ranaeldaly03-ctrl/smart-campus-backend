@@ -1405,22 +1405,37 @@ def get_student_quizzes(student_id):
         cur = db.cursor(dictionary=True)
         # نفترض أن الكويزات محفوظة في جدول assignment مع type='Quiz'
         cur.execute("""
-            SELECT 
+            SELECT
                 a.id,
                 a.course_id,
                 c.course_name,
                 a.title,
-                a.question_count,     -- لو عندك حقل بعدد الأسئلة
-                a.duration,           -- مدة بالدقائق
+
+                COUNT(q.id) AS question_count,
+
+                a.duration,
                 a.start_time,
                 a.end_time,
                 a.created_at
+
             FROM assignment a
-            JOIN course c ON a.course_id = c.id
-            JOIN student_courses sc ON sc.course_id = a.course_id
-            WHERE sc.student_id = %s AND a.type = 'Quiz'
-            ORDER BY a.start_time ASC
-        """, (student_id,))
+
+            JOIN course c
+            ON a.course_id = c.id
+
+            JOIN student_courses sc
+            ON sc.course_id = a.course_id
+
+            LEFT JOIN quiz_question q
+            ON q.assignment_id = a.id
+
+            WHERE sc.student_id=%s
+            AND a.type='Quiz'
+
+            GROUP BY a.id
+
+            ORDER BY a.created_at DESC
+            """, (student_id,))
         quizzes = cur.fetchall()
         cur.close()
         return jsonify(quizzes), 200
@@ -2290,13 +2305,17 @@ def add_assignment():
             file_obj = request.files.get('file')
         else:
             data = request.get_json(force=True, silent=True) or {}
+
             course_id = data.get('course_id')
             title = data.get('title')
             description = data.get('description') or ''
             type_ = data.get('type') or 'Assignment'
             due_date = data.get('due_date')
             total_mark = data.get('total_mark') or 0
-            file_obj = None
+
+            duration = data.get('duration')
+            start_time = data.get('start_time')
+            end_time = data.get('end_time')
 
         # ===============================
         # تحويل التاريخ (المهم 👈)
@@ -2330,10 +2349,33 @@ def add_assignment():
         # ===============================
         try:
             cur.execute("""
-                INSERT INTO assignment 
-                (course_id, title, description, type, due_date, total_mark)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (course_id, title, description, type_, due_date, total_mark))
+                INSERT INTO assignment
+                (
+                    course_id,
+                    title,
+                    description,
+                    type,
+                    due_date,
+                    total_mark,
+                    duration,
+                    start_time,
+                    end_time
+                )
+                VALUES
+                (
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s
+                )
+                """, (
+                    course_id,
+                    title,
+                    description,
+                    type_,
+                    due_date,
+                    total_mark,
+                    duration,
+                    start_time,
+                    end_time
+                ))
         except:
             # fallback لو اسم الجدول مختلف
             cur.execute("""
@@ -2412,6 +2454,103 @@ def add_assignment():
 
 
 
+
+
+@app.route("/quiz_questions/<int:assignment_id>")
+def quiz_questions(assignment_id):
+
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+        SELECT
+        id,
+        q_type,
+        question_text,
+        options,
+        marks
+        FROM quiz_question
+        WHERE assignment_id=%s
+    """,(assignment_id,))
+
+    questions = cur.fetchall()
+
+    cur.close()
+
+    return jsonify(questions)
+
+
+
+@app.route("/submit_quiz", methods=["POST"])
+def submit_quiz():
+
+    data = request.get_json()
+
+    student_id = data["student_id"]
+    assignment_id = data["assignment_id"]
+    answers = data["answers"]
+
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+        SELECT *
+        FROM quiz_question
+        WHERE assignment_id=%s
+    """,(assignment_id,))
+
+    questions = cur.fetchall()
+
+    score = 0
+    total = 0
+
+    for q in questions:
+
+        qid = str(q["id"])
+
+        total += q["marks"]
+
+        if qid in answers:
+
+            if str(answers[qid]).strip() == str(q["correct_answer"]).strip():
+
+                score += q["marks"]
+
+    cur.execute("""
+        SELECT course_id
+        FROM assignment
+        WHERE id=%s
+    """,(assignment_id,))
+
+    course = cur.fetchone()
+
+    course_id = course["course_id"]
+
+    cur.execute("""
+        INSERT INTO grades
+        (
+            student_id,
+            course_id,
+            assignment_id,
+            grade,
+            total_grade
+        )
+        VALUES(%s,%s,%s,%s,%s)
+    """,
+    (
+        student_id,
+        course_id,
+        assignment_id,
+        score,
+        total
+    ))
+
+    db.commit()
+
+    cur.close()
+
+    return jsonify({
+        "score": score,
+        "total": total
+    })
 
 
 from flask import url_for
@@ -5770,7 +5909,9 @@ def gate_logs_page():
 
 
 
-          
+@app.route("/take_quiz")
+def take_quiz():
+    return render_template("take_quiz.html")          
 
 
 

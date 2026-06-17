@@ -130,23 +130,40 @@
 
       <!-- Quiz form -->
       <form id="quizForm" class="hidden">
-        <div class="row">
-          <label for="quizTitle">Quiz Title</label>
-          <input id="quizTitle" type="text" placeholder="Enter quiz title" required>
-        </div>
-        <div class="row">
-          <label for="quizTotal">Total Marks</label>
-          <input id="quizTotal" type="number" min="0" required>
-        </div>
-        <div class="row">
-          <label for="quizDate">Date & Time</label>
-          <input id="quizDate" type="datetime-local">
-        </div>
-        <div class="row actions">
-          <button id="createQuizBtn" class="btn primary" type="button">Create Quiz</button>
-        </div>
-        <p class="note">Creates assignment row with <code>type='Quiz'</code> and returns its id.</p>
+
+          <div class="row">
+              <label for="quizTitle">Quiz Title</label>
+              <input id="quizTitle" type="text" placeholder="Enter quiz title" required>
+          </div>
+
+          <div class="row">
+              <label for="quizTotal">Total Marks</label>
+              <input id="quizTotal" type="number" min="0" required>
+          </div>
+
+          <div class="row">
+              <label for="quizDuration">Duration (Minutes)</label>
+              <input id="quizDuration" type="number" min="1" placeholder="60">
+          </div>
+
+          <div class="row">
+              <label for="quizStart">Start Time</label>
+              <input id="quizStart" type="datetime-local">
+          </div>
+
+          <div class="row">
+              <label for="quizEnd">End Time</label>
+              <input id="quizEnd" type="datetime-local">
+          </div>
+
+          <div class="row actions">
+              <button id="createQuizBtn" class="btn primary" type="button">
+                  Create Quiz
+              </button>
+          </div>
+
       </form>
+      
 
       <div id="response" class="response hidden" style="margin-top:12px"></div>
     </div>
@@ -335,12 +352,27 @@
       if(!courseId){ alert('Please select a course'); return; }
       const title = document.getElementById('quizTitle').value?.trim() || 'Untitled Quiz';
       const payload = {
-        course_id: Number(courseId),
-        title: title,
-        description: 'Quiz created from UI',
-        type: 'Quiz',
-        due_date: (document.getElementById('quizDate').value || '').split('T')[0] || null,
-        total_mark: Number(document.getElementById('quizTotal').value || 0)
+          course_id: Number(courseId),
+          title: title,
+          description: 'Quiz created from UI',
+          type: 'Quiz',
+
+          total_mark: Number(
+              document.getElementById('quizTotal').value || 0
+          ),
+
+          duration: Number(
+              document.getElementById('quizDuration').value || 0
+          ),
+
+          start_time:
+              document.getElementById('quizStart').value || null,
+
+          end_time:
+              document.getElementById('quizEnd').value || null,
+
+          due_date:
+              document.getElementById('quizEnd').value || null
       };
       try{
         const r = await fetch(`${api}/add_assignment`, {
