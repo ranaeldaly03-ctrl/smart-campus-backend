@@ -509,10 +509,11 @@
         document.getElementById('publishQuizBtn').addEventListener('click', publishQuizHandler);
         // document.getElementById('createQuizBtn')?.addEventListener('click', createQuizHandler);
 
-        await loadCoursesIntoSelect();
+        // await loadCoursesIntoSelect();
 
         const params = new URLSearchParams(window.location.search);
         const qid = params.get('quiz_id');
+        console.log("QUIZ ID =", qid);
         if(qid){
         currentQuizId = qid;
         document.getElementById('createMsg') && (document.getElementById('createMsg').textContent = "Editing quiz " + currentQuizId);
