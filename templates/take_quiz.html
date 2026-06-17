@@ -62,10 +62,100 @@ href="{{ url_for('static', filename='stu_assigment.css') }}">
 <h2 id="studentName"></h2>
 </li>
 
-<li><a href="/stu_dashboard"><i class="fas fa-home"></i><p>dashboard</p></a></li>
-<li><a href="/stu_att"><i class="fas fa-qrcode"></i><p>Attendance</p></a></li>
-<li><a href="/stu_courses"><i class="fa fa-list-alt"></i><p>Courses</p></a></li>
-<li><a class="active"><i class="far fa-edit"></i><p>Quiz</p></a></li>
+<li class="profile">
+                <div class="img-box">
+                    <img id="profilePic" src="" alt="profile">
+                </div>
+
+                <h2 id="studentName"></h2>
+            </li>
+            <li>
+                <a href="/stu_dashboard">
+                    <i class="fas fa-home"></i>
+                    <p>dashboard</p>
+                </a>
+            </li>
+            <li>
+                <a href="/stu_att">
+                    <i class="fas fa-qrcode"></i>
+                    <p>Attendance</p>
+                </a>
+            </li>
+            <li>
+                <a href="/stu_courses">
+                    <i class="fa fa-list-alt"></i>
+                    <p>Courses</p>
+                </a>
+            </li>
+            <li>
+                <a href="/stu_ads">
+                    <i class="fab fa-adversal"></i>
+                    <p>ADS</p>
+                </a>
+            </li>
+            <li>
+                <a href="/stu_schedule">
+                    <i class="fas fa-table"></i>
+                    <p>Tables</p>
+                </a>
+            </li>
+            <li>
+                <a href="/stu_assigment">
+                    <i class="fas fa-check-double"></i>
+                    <p>Assignments</p>
+                </a>
+            </li>
+            <li>
+                <a class="active" href="/stu_quiz">
+                    <i class="far fa-edit"></i>
+                    <p>Quizzes</p>
+                </a>
+            </li>
+            <li>
+                <a href="/stu_deg">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Degree</p>
+                </a>
+            </li>
+            <li>
+                <a href="/stu_midterm">
+                    <i class="fas fa-star"></i>
+                    <p>Midterm</p>
+                </a>
+            </li>
+            <li><a href="/stu_chat"><i class="fas fa-comments"></i>
+                <p>
+                    Chat 
+                    <span id="notifBadge"
+                        style="
+                            display:inline-flex;
+                            align-items:center;
+                            justify-content:center;
+                            min-width:18px;
+                            height:18px;
+                            background:red;
+                            color:white;
+                            border-radius:50%;
+                            font-size:12px;
+                            margin-left:6px;
+                            padding:0 5px;">
+                    </span>
+                </p>
+                </a>
+            </li>
+            <li>
+                <a href="/chatbot">
+                    <i class="fab fa-github-alt"></i>
+                    <p>Ai</p>
+                </a>
+            </li>
+            
+            <li class="log-out">
+                <a href="/">
+                    <i class="fas fa-sign-out"></i>
+                    <p>log Out</p>
+                </a>
+            </li>
 
 </ul>
 </div>
