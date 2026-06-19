@@ -1,0 +1,238 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='admin.css') }}">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users Management</title>
+</head>
+
+<body>
+
+<div class="menu">
+    <ul>
+
+        <li class="profile">
+            <div class="img-box">
+                <img id="profilePic" src="" alt="profile">
+            </div>
+
+            <h2 id="adminName"></h2>
+        </li>
+
+        <li>
+            <a href="/admin">
+                <i class="fas fa-home"></i>
+                <p>Dashboard</p>
+            </a>
+        </li>
+
+        <li>
+            <a class="active" href="/users">
+                <i class="fas fa-user-group"></i>
+                <p>Users</p>
+            </a>
+        </li>
+
+        <li>
+            <a href="/student_requests">
+                <i class="fas fa-user-check"></i>
+                <p>Student Requests</p>
+            </a>
+        </li>
+
+        <li>
+            <a href="/courses">
+                <i class="fa fa-list-alt"></i>
+                <p>Courses</p>
+            </a>
+        </li>
+
+        <li>
+            <a href="/admin_schedule">
+                <i class="fas fa-table"></i>
+                <p>Tables</p>
+            </a>
+        </li>
+
+        <li>
+            <a href="/admin_gate">
+                <i class="fas fa-torii-gate"></i>
+                <p>Gate</p>
+            </a>
+        </li>
+
+        <li>
+            <a href="/gate_logs">
+                <i class="fas fa-dungeon"></i>
+                <p>Gate Logs</p>
+            </a>
+        </li>
+
+        <li>
+            <a href="/register_card">
+                <i class="fas fa-id-card"></i>
+                <p>Cards</p>
+            </a>
+        </li>
+
+        <li class="log-out">
+            <a href="/">
+                <i class="fas fa-sign-out"></i>
+                <p>Log Out</p>
+            </a>
+        </li>
+
+    </ul>
+</div>
+
+
+<div class="content">
+
+    <div class="title-info">
+        <p>Users Management</p>
+        <i class="fas fa-user-group"></i>
+    </div>
+
+    <table id="userTable">
+
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Department</th>
+                <th>Level</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody id="users"></tbody>
+
+    </table>
+
+</div>
+
+
+<script>
+
+const api = "";
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const name  = localStorage.getItem("user_name");
+    const role  = localStorage.getItem("user_role");
+    const image = localStorage.getItem("user_image");
+
+    if (!name || role !== "Admin") {
+        window.location.href = "/";
+        return;
+    }
+
+    document.getElementById("adminName").textContent = name;
+
+    const profilePic = document.getElementById("profilePic");
+
+    if (image && image !== "null" && image !== "") {
+        profilePic.src = `${api}/${image}`;
+    } else {
+        profilePic.src = "/uploads/admin.png";
+    }
+
+    loadUsers();
+
+});
+
+
+async function loadUsers() {
+
+    try {
+
+        const res = await fetch(`${api}/all_users`);
+        const data = await res.json();
+
+        const tbody = document.getElementById("users");
+
+        tbody.innerHTML = "";
+
+        data.users.forEach(user => {
+
+            tbody.innerHTML += `
+                <tr id="user-${user.id}">
+                    <td>${user.id}</td>
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td>${user.role}</td>
+                    <td>${user.department || "-"}</td>
+                    <td>${user.level || "-"}</td>
+
+                    <td>
+                        <button
+                            onclick="deleteUser(${user.id})"
+                            style="
+                                background:#dc3545;
+                                color:white;
+                                border:none;
+                                padding:8px 15px;
+                                border-radius:6px;
+                                cursor:pointer;
+                                font-weight:bold;">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+    }
+    catch(error){
+
+        console.error(error);
+        alert("Failed to load users");
+
+    }
+
+}
+
+
+async function deleteUser(userId) {
+
+    if(!confirm("Are you sure you want to delete this user?"))
+        return;
+
+    try {
+
+        const res = await fetch(
+            `${api}/delete_user/${userId}`,
+            {
+                method: "DELETE"
+            }
+        );
+
+        const result = await res.json();
+
+        alert(result.message);
+
+        loadUsers();
+
+    }
+    catch(error){
+
+        console.error(error);
+        alert("Delete failed");
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
+```

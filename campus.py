@@ -5308,6 +5308,42 @@ def start_conversation():
 
 
 
+@app.route('/all_users', methods=['GET'])
+def all_users():
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("""
+        SELECT id,name,email,role,department,level
+        FROM users
+        ORDER BY id
+    """)
+
+    users = cur.fetchall()
+
+    return jsonify({
+        "users": users
+    })
+
+
+@app.route('/delete_user/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+
+    cur = db.cursor()
+
+    cur.execute(
+        "DELETE FROM users WHERE id=%s",
+        (user_id,)
+    )
+
+    db.commit()
+
+    return jsonify({
+        "message":"✅ User deleted successfully"
+    })
+
+
+
+
 @app.route('/conversation/<int:conversation_id>')
 def get_conversation(conversation_id):
 
@@ -5957,6 +5993,12 @@ def gate_logs_page():
 @app.route("/take_quiz")
 def take_quiz():
     return render_template("take_quiz.html")          
+
+
+
+@app.route("/delete_users")
+def delete_users():
+    return render_template("delete_users.html")        
 
 
 
