@@ -5660,24 +5660,43 @@ def unread_count(instructor_id):
 
 
 #######Robot#################
+robot_data = {
+    "lat": 0,
+    "lon": 0,
+    "heading": 0
+}
+
+
 @app.route('/robot/order', methods=['POST'])
 def robot_order():
+
     data = request.get_json()
 
     lat = data.get("lat")
     lon = data.get("lon")
     item = data.get("item")
+    student_id = data.get("student_id")
 
     db = get_db()
     cursor = db.cursor()
+
     cursor.execute("""
-        INSERT INTO robot_orders (lat, lon, item, status)
-        VALUES (%s,%s,%s,'waiting')
-    """,(lat,lon,item))
+        INSERT INTO robot_orders
+        (student_id,lat,lon,item,status)
+        VALUES (%s,%s,%s,%s,'waiting')
+    """,(student_id,lat,lon,item))
 
     db.commit()
 
-    return jsonify({"message":"order received"})
+    order_id = cursor.lastrowid
+
+    cursor.close()
+    db.close()
+
+    return jsonify({
+        "message": "order received",
+        "order_id": order_id
+    })
     
 
 
@@ -5686,18 +5705,156 @@ def robot_order():
 def get_order():
 
     db = get_db()
-
     cursor = db.cursor(dictionary=True)
 
     cursor.execute("""
-    SELECT * FROM robot_orders
-    WHERE status='waiting'
-    ORDER BY id DESC
+        SELECT *
+        FROM robot_orders
+        WHERE status='waiting'
+        ORDER BY id DESC
     """)
 
     orders = cursor.fetchall()
 
+    cursor.close()
+    db.close()
+
     return jsonify(orders)
+
+
+
+
+@app.route('/api/robot/track/<int:id>')
+def track_robot(id):
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT *
+        FROM robot_orders
+        WHERE id=%s
+    """,(id,))
+
+    order = cursor.fetchone()
+
+    cursor.close()
+    db.close()
+
+    return jsonify(order)
+
+
+
+@app.route('/robot/approve/<int:id>', methods=['POST'])
+def robot_approve(id):
+
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        UPDATE robot_orders
+        SET status='approved'
+        WHERE id=%s
+    """,(id,))
+
+    db.commit()
+
+    cursor.close()
+    db.close()
+
+    return jsonify({
+        "message":"Order Approved"
+    })
+
+
+
+
+
+@app.route('/test_robot')
+def test_robot():
+ 
+    global robot_data
+
+    robot_data["lat"] = 29.932962
+    robot_data["lon"] = 30.920956
+    robot_data["heading"] = 180
+
+    return jsonify(robot_data)
+
+
+
+@app.route('/api/robot/active')
+def active_order():
+    db = get_db()
+
+    cursor = db.cursor(
+    dictionary=True,
+    buffered=True
+)
+
+    cursor.execute("""
+        SELECT *
+        FROM robot_orders
+        WHERE status IN ('approved','moving','arrived')
+        ORDER BY id DESC
+        LIMIT 1
+    """)
+
+    order = cursor.fetchone()
+    cursor.close()
+    db.close()
+    if order:
+        return jsonify(order)
+
+    return jsonify({"status":"none"})
+
+
+
+
+
+@app.route('/robot/arrived/<int:id>', methods=['POST'])
+def robot_arrived(id):
+
+    db = get_db()
+    cur = db.cursor()
+
+    cur.execute("""
+        UPDATE robot_orders
+        SET status='arrived'
+        WHERE id=%s
+    """,(id,))
+
+    db.commit()
+
+    cur.close()
+
+    return jsonify({
+        "message":"arrived"
+    })
+
+
+
+
+@app.route('/robot/start/<int:id>', methods=['POST'])
+def robot_start(id):
+
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        UPDATE robot_orders
+        SET status='moving'
+        WHERE id=%s
+    """, (id,))
+
+    db.commit()
+
+    cursor.close()
+    db.close()
+
+    return jsonify({
+        "message": "moving"
+    })
 
 
 
@@ -5705,80 +5862,145 @@ def get_order():
 def robot_done(id):
 
     db = get_db()
-
     cursor = db.cursor()
 
     cursor.execute("""
         UPDATE robot_orders
         SET status='done'
         WHERE id=%s
-    """,(id,))
+    """, (id,))
 
     db.commit()
 
-    return jsonify({"message":"done"})
+    cursor.close()
+    db.close()
+
+    return jsonify({
+        "message": "done"
+    })
 
 
 
-@app.route('/robot/get_my_order')
-def get_my_order():
+@app.route('/api/robot/task')
+def robot_task():
 
     db = get_db()
-
     cursor = db.cursor(dictionary=True)
 
     cursor.execute("""
-    SELECT * FROM robot_orders
-    ORDER BY id DESC
-    LIMIT 1
+        SELECT *
+        FROM robot_orders
+        WHERE status='approved'
+        ORDER BY id ASC
+        LIMIT 1
     """)
 
-    order = cursor.fetchone()
+    task = cursor.fetchone()
 
-    return jsonify(order)
+    cursor.close()
+    db.close()
+
+    if task:
+        return jsonify({
+            "id": task["id"],
+            "lat": float(task["lat"]),
+            "lon": float(task["lon"])
+        })
+
+    return jsonify({
+        "status": "no_task"
+    })
 
 
 
+@app.route('/api/robot/update', methods=['POST'])
+def robot_update():
 
+    data = request.get_json()
 
-@app.route('/robot/close_box/<int:id>', methods=['POST'])
-def close_box(id):
+    lat = float(data.get("lat", 0))
+    lon = float(data.get("lon", 0))
+    heading = float(data.get("heading", 0))
 
     db = get_db()
-
-    cursor=db.cursor()
+    cursor = db.cursor()
 
     cursor.execute("""
-    UPDATE robot_orders
-    SET box_status='closed',status='delivering'
-    WHERE id=%s
-    """,(id,))
+UPDATE robot_orders
+SET robot_lat=%s,
+    robot_lon=%s,
+    robot_heading=%s
+WHERE status='moving'
+""",(lat,lon,heading))
 
     db.commit()
 
-    return jsonify({"message":"box closed"})
+    cursor.close()
+    db.close()
 
+    return jsonify({
+        "success": True
+    })
+HOME_LAT = 29.932962
+HOME_LON = 30.920956
+@app.route('/api/robot/home')
+def robot_home():
 
-
-
-
-
-@app.route('/robot/open_box/<int:id>', methods=['POST'])
-def open_box(id):
+    return jsonify({
+        "lat": HOME_LAT,
+        "lon": HOME_LON
+    })
+@app.route('/api/robot/status/<int:id>')
+def robot_status(id):
 
     db = get_db()
-
-    cursor=db.cursor()
+    cursor = db.cursor(dictionary=True)
 
     cursor.execute("""
-    UPDATE robot_orders
-    SET box_status='open',status='arrived'
-    WHERE id=%s
+        SELECT status
+        FROM robot_orders
+        WHERE id=%s
     """,(id,))
 
-    db.commit()
+    result = cursor.fetchone()
 
-    return jsonify({"message":"box opened"})
+    cursor.close()
+    db.close()
+
+    if result:
+        return jsonify(result)
+
+    return jsonify({
+        "status":"not_found"
+    })
+
+
+
+@app.route('/api/robot/current')
+def current_task():
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT *
+        FROM robot_orders
+        WHERE status IN ('approved','moving')
+        ORDER BY id ASC
+        LIMIT 1
+    """)
+
+    task = cursor.fetchone()
+
+    cursor.close()
+    db.close()
+
+    if task:
+        return jsonify(task)
+
+    return jsonify({
+        "status":"none"
+    })
 
 
 ####################################

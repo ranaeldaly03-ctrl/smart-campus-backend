@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="{{ url_for('static', filename='robot.css') }}">
+    <link rel="stylesheet" href="robot.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CampusBot</title>
 </head>
@@ -35,6 +35,13 @@
 
   <div class="section">
     <button class="primary-btn success" onclick="sendOrder()">🚀 Send Order</button>
+    <div id="orderResult"
+                style="
+                margin-top:15px;
+                font-weight:bold;
+                color:#10B981;
+                ">
+</div>
   </div>
 
 </div>
@@ -95,26 +102,44 @@
         return;
       }
 
-      fetch("/robot/order", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          item: item,
-          lat: lat,
-          lon: lon
-        })
-      })
-      .then(res => res.text())
-      .then(data => {
-        alert("Order Sent ✅");
-        console.log(data);
-      })
-      .catch(err => {
-        alert("Error ❌");
-        console.log(err);
-      });
+    fetch("/robot/order", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        item: item,
+        lat: lat,
+        lon: lon
+    })
+})
+.then(res => res.json())
+.then(data => {
+
+    localStorage.setItem(
+        "last_order_id",
+        data.order_id
+    );
+
+    console.log(data);
+
+    alert(
+        "✅ Order Created\n\nOrder ID: " +
+        data.order_id
+    );
+
+    window.location.href = "track.html";
+
+})
+.catch(err => {
+
+    console.log(err);
+
+    alert(
+        "ERROR:\n" + err
+    );
+
+});
     }
   </script>
 

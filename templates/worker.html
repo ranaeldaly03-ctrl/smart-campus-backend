@@ -59,88 +59,67 @@
   <div id="orders">Loading...</div>
 
 </div>
-
 <script>
 
-    const BASE = "";
+const BASE = "";
 
-    // ✅ تجيب كل الأوردرات waiting
-    function loadOrders() {
+async function loadOrders()
+{
+    const res = await fetch(BASE + "/robot/get_order");
+    const orders = await res.json();
 
-    fetch(BASE + "/robot/get_order")
-        .then(res => res.json())
-        .then(data => {
+    const container = document.getElementById("orders");
 
-        const container = document.getElementById("orders");
-        container.innerHTML = "";
+    container.innerHTML = "";
 
-        if (!data || data.length === 0) {
-            container.innerHTML = "<p>No waiting orders 😴</p>";
-            return;
-        }
-
-        data.forEach(order => {
-
-            let color = "#ccc";
-            let text = "";
-
-            if (order.status === "waiting") {
-                color = "#f59e0b";
-                text = "🟡 Waiting";
-            }
-
-            if (order.status === "delivering") {
-                color = "#3b82f6";
-                text = "🔵 On The Way";
-            }
-
-            const div = document.createElement("div");
-            div.className = "order";
-
-            div.innerHTML = `
-                <b>Item:</b> ${order.item} <br>
-
-                <b>Status:</b> 
-                <span style="color:${color}; font-weight:bold">
-                ${text}
-                </span><br><br>
-
-                ${
-                order.status === "waiting"
-                    ? `<button class="btn ready" onclick="startDelivery(${order.id})">
-                        🚀 Start Delivery
-                    </button>`
-                    : ""
-                }
-            `;
-
-            container.appendChild(div);
-            });
-
-        });
+    if (orders.length === 0)
+    {
+        container.innerHTML =
+            "<p>No waiting orders 😴</p>";
+        return;
     }
 
+    orders.forEach(order =>
+    {
+        container.innerHTML += `
+        <div class="order">
 
-    // 🚀 يبدأ التوصيل
-    function startDelivery(id) {
+            <b>Order #${order.id}</b><br>
+            <b>Item:</b> ${order.item}<br>
+            <b>Lat:</b> ${order.lat}<br>
+            <b>Lon:</b> ${order.lon}<br>
+            <b>Status:</b> ${order.status}<br><br>
 
-    fetch(BASE + "/robot/close_box/" + id, {
-        method: "POST"
-    })
-    .then(() => {
-        alert("🚀 Delivery Started");
-        loadOrders(); // ✅ صح
+            <button class="btn ready"
+                onclick="approveOrder(${order.id})">
+                ✅ Approve
+            </button>
+
+        </div>
+        `;
     });
-    }
+}
 
+async function approveOrder(id)
+{
+    const res = await fetch(
+        BASE + "/robot/approve/" + id,
+        {
+            method: "POST"
+        }
+    );
 
-    // 🔄 تحديث كل 3 ثواني
-    setInterval(loadOrders, 3000);
+    const data = await res.json();
 
-    // أول تشغيل
+    alert(data.message);
+
     loadOrders();
+}
+
+loadOrders();
+
+setInterval(loadOrders, 3000);
 
 </script>
-
 </body>
 </html>

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
-<head>
+<head> <link rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"/> 
   <title>Track Order</title>
 
   <style>
@@ -31,87 +32,166 @@
     }
   </style>
 </head>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
+ 
 <body>
-
 <h1>📦 Track Your Order</h1>
 
-<div class="box" id="statusBox">
-  Loading...
+<div class="box">
+
+    <input
+    type="number"
+    id="orderId"
+    placeholder="Enter Order ID">
+
+    <button onclick="loadStatus()">
+        Track Order
+    </button>
+
 </div>
+
+<br>
+
+<div class="box" id="statusBox">
+    Loading...
+</div>
+<div id="map"
+style="
+height:400px;
+margin-top:20px;
+border-radius:15px;
+overflow:hidden;
+">
+</div>
+ 
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
 
-const BASE = "http://192.168.1.11:5000";
-let currentOrderId = null;
+const BASE = "";
 
+let map;
+let studentMarker;
+let robotMarker;
+let routeLine;
 
-const role = localStorage.getItem("user_role");
+function initMap()
+{
+    const mapDiv =
+        document.getElementById("map");
 
-if (!role) {
-    window.location.href = "/";
+    if(!mapDiv)
+    {
+        console.log("Map div not found");
+        return;
+    }
+
+    map = L.map("map").setView(
+        [29.932962,30.920956],
+        18
+    );
+
+    L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+            attribution: "OpenStreetMap"
+        }
+    ).addTo(map);
 }
 
+function loadStatus()
+{
+    const id =
+        document.getElementById("orderId").value;
 
-// 🔥 يجيب آخر أوردر للمستخدم
-function loadStatus() {
-
-  fetch(BASE + "/robot/get_my_order")
-    .then(res => res.json())
-    .then(data => {
-
-      if (!data || data.length === 0) {
-        document.getElementById("statusBox").innerHTML = "No order";
+    if(!id)
+    {
+        alert("Enter Order ID");
         return;
-      }
+    }
 
-      // ناخد آخر أوردر
-      const order = data[0];
-      currentOrderId = order.id;
-
-      let statusText = "";
-
-      if (order.status === "waiting") {
-        statusText = "🟡 Preparing your order";
-      }
-
-      if (order.status === "delivering") {
-        statusText = "🚀 Robot is on the way";
-      }
-
-      if (order.status === "arrived") {
-        statusText = `
-          🟢 Robot Arrived <br><br>
-          <button onclick="openBox()">🔓 Open Box</button>
+    fetch(BASE + "/api/robot/track/" + id)
+    .then(res => res.json())
+    .then(order =>
+    {
+        document.getElementById("statusBox").innerHTML = `
+            <h3>Order #${order.id}</h3>
+            <p>Item: ${order.item}</p>
+            <p>Status: ${order.status}</p>
         `;
-      }
-
-      document.getElementById("statusBox").innerHTML = statusText;
-
     });
 }
 
+function updateRobotLocation()
+{
+    const orderId =
+        document.getElementById("orderId").value;
 
-// 🔓 فتح البوكس
-function openBox() {
+    if(!orderId)
+        return;
 
-  fetch(BASE + "/robot/open_box/" + currentOrderId, {
-    method: "POST"
-  })
-  .then(() => {
-    alert("📦 Box Opened!");
-    loadStatus();
-  });
+    fetch(BASE + "/api/robot/track/" + orderId)
+    .then(res => res.json())
+    .then(data =>
+    {
+        if(!data || !data.robot_lat)
+            return;
+
+        const studentLat = parseFloat(data.lat);
+        const studentLon = parseFloat(data.lon);
+
+        const robotLat = parseFloat(data.robot_lat);
+        const robotLon = parseFloat(data.robot_lon);
+
+        if(!studentMarker)
+        {
+            studentMarker =
+            L.marker([studentLat,studentLon])
+            .addTo(map)
+            .bindPopup("Student");
+        }
+
+        if(!robotMarker)
+        {
+            robotMarker =
+            L.marker([robotLat,robotLon])
+            .addTo(map)
+            .bindPopup("CampusBot");
+        }
+
+        studentMarker.setLatLng([studentLat,studentLon]);
+        robotMarker.setLatLng([robotLat,robotLon]);
+
+        if(routeLine)
+            map.removeLayer(routeLine);
+
+        routeLine =
+        L.polyline([
+            [studentLat,studentLon],
+            [robotLat,robotLon]
+        ]).addTo(map);
+
+        map.fitBounds(routeLine.getBounds());
+    });
 }
 
+initMap();
 
-// تحديث كل 3 ثواني
-setInterval(loadStatus, 3000);
+const lastOrder =
+    localStorage.getItem("last_order_id");
 
-// أول تشغيل
-loadStatus();
+if(lastOrder)
+{
+    document.getElementById("orderId").value =
+        lastOrder;
+
+    loadStatus();
+}
+
+setInterval(updateRobotLocation,3000);
 
 </script>
-
+  
 </body>
 </html>
