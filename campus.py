@@ -5660,13 +5660,12 @@ def unread_count(instructor_id):
 
 
 #######Robot#################
-from flask import request, jsonify
-
 robot_data = {
     "lat": 0,
     "lon": 0,
     "heading": 0
 }
+
 
 @app.route('/robot/order', methods=['POST'])
 def robot_order():
@@ -5698,6 +5697,9 @@ def robot_order():
         "message": "order received",
         "order_id": order_id
     })
+    
+
+
 
 @app.route('/robot/get_order')
 def get_order():
@@ -5721,6 +5723,7 @@ def get_order():
 
 
 
+
 @app.route('/api/robot/track/<int:id>')
 def track_robot(id):
 
@@ -5739,6 +5742,8 @@ def track_robot(id):
     db.close()
 
     return jsonify(order)
+
+
 
 @app.route('/robot/approve/<int:id>', methods=['POST'])
 def robot_approve(id):
@@ -5763,6 +5768,8 @@ def robot_approve(id):
 
 
 
+
+
 @app.route('/test_robot')
 def test_robot():
  
@@ -5773,6 +5780,8 @@ def test_robot():
     robot_data["heading"] = 180
 
     return jsonify(robot_data)
+
+
 
 @app.route('/api/robot/active')
 def active_order():
@@ -5800,6 +5809,9 @@ def active_order():
     return jsonify({"status":"none"})
 
 
+
+
+
 @app.route('/robot/arrived/<int:id>', methods=['POST'])
 def robot_arrived(id):
 
@@ -5819,6 +5831,9 @@ def robot_arrived(id):
     return jsonify({
         "message":"arrived"
     })
+
+
+
 
 @app.route('/robot/start/<int:id>', methods=['POST'])
 def robot_start(id):
@@ -5865,6 +5880,7 @@ def robot_done(id):
     })
 
 
+
 @app.route('/api/robot/task')
 def robot_task():
 
@@ -5894,6 +5910,9 @@ def robot_task():
     return jsonify({
         "status": "no_task"
     })
+
+
+
 @app.route('/api/robot/update', methods=['POST'])
 def robot_update():
 
@@ -5924,15 +5943,13 @@ WHERE status='moving'
     })
 HOME_LAT = 29.932962
 HOME_LON = 30.920956
-
 @app.route('/api/robot/home')
-def get_robot_home():
+def robot_home():
 
     return jsonify({
         "lat": HOME_LAT,
         "lon": HOME_LON
     })
-
 @app.route('/api/robot/status/<int:id>')
 def robot_status(id):
 
@@ -5956,6 +5973,9 @@ def robot_status(id):
     return jsonify({
         "status":"not_found"
     })
+
+
+
 @app.route('/api/robot/current')
 def current_task():
 
@@ -5982,113 +6002,6 @@ def current_task():
         "status":"none"
     })
 
-@app.route('/robot/cancel/<int:id>', methods=['POST'])
-def cancel_order(id):
-
-    db = get_db()
-    cursor = db.cursor()
-
-    cursor.execute("""
-        UPDATE robot_orders
-        SET status='cancelled'
-        WHERE id=%s
-    """,(id,))
-
-    db.commit()
-
-    cursor.close()
-    db.close()
-
-    return jsonify({
-        "message":"Mission Cancelled"
-    })
-
-@app.route('/robot/history')
-def robot_history():
-
-    db = get_db()
-    cursor = db.cursor(dictionary=True)
-
-    cursor.execute("""
-        SELECT *
-        FROM robot_orders
-        WHERE status IN
-        (
-            'done',
-            'completed',
-            'cancelled',
-            'declined'
-        )
-        ORDER BY id DESC
-        LIMIT 50
-    """)
-
-    orders = cursor.fetchall()
-
-    cursor.close()
-    db.close()
-
-    return jsonify(orders)
-
-
-@app.route('/robot/decline/<int:id>', methods=['POST'])
-def robot_decline(id):
-
-    db = get_db()
-    cursor = db.cursor()
-
-    cursor.execute("""
-        UPDATE robot_orders
-        SET status = 'declined'
-        WHERE id = %s
-    """, (id,))
-
-    db.commit()
-
-    if cursor.rowcount == 0:
-        cursor.close()
-        db.close()
-
-        return jsonify({
-            "success": False,
-            "message": "Order not found"
-        }), 404
-
-    cursor.close()
-    db.close()
-
-    return jsonify({
-        "success": True,
-        "message": "Order Declined"
-    })
-@app.route('/robot/home/<int:id>', methods=['POST'])
-def robot_returned_home(id):
-
-    db = get_db()
-    cursor = db.cursor()
-
-    cursor.execute("""
-        UPDATE robot_orders
-        SET status='completed'
-        WHERE id=%s
-    """, (id,))
-
-    db.commit()
-
-    cursor.close()
-    db.close()
-
-    return jsonify({
-        "message": "Robot Returned Home"
-    })
-
-if __name__ == '__main__':
-    socketio.run(
-        app,
-        host="0.0.0.0",
-        port=5000,
-        debug=True
-    )
 
 ####################################
 from flask import render_template
