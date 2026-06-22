@@ -5700,7 +5700,6 @@ def robot_order():
     
 
 
-
 @app.route('/robot/get_order')
 def get_order():
 
@@ -5710,7 +5709,7 @@ def get_order():
     cursor.execute("""
         SELECT *
         FROM robot_orders
-        WHERE status='waiting'
+        WHERE status IN ('waiting','approved')
         ORDER BY id DESC
     """)
 
@@ -5720,7 +5719,6 @@ def get_order():
     db.close()
 
     return jsonify(orders)
-
 
 
 
