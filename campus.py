@@ -5944,13 +5944,13 @@ HOME_LAT = 29.932962
 HOME_LON = 30.920956
 
 
-@app.route('/api/robot/home')
-def robot_home():
+# @app.route('/api/robot/home')
+# def robot_home():
 
-    return jsonify({
-        "lat": HOME_LAT,
-        "lon": HOME_LON
-    })
+#     return jsonify({
+#         "lat": HOME_LAT,
+#         "lon": HOME_LON
+#     })
 
 
 
