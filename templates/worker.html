@@ -1,10 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
-  <link rel="stylesheet" href="{{ url_for('static', filename='robot.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='robot.css') }}">
   <title>Worker Panel</title>
+ <button
+    class="btn"
+    style="
+        background:#EF4444;
+        color:white;
+        margin-bottom:20px;
+    "
+    onclick="cancelCurrentOrder()">
 
+    ❌ Cancel Current Mission
+
+</button>
   <style>
     body {
       font-family: 'Segoe UI';
@@ -56,9 +66,13 @@
 
 <div class="container">
 
-  <h1>☕ Worker Panel</h1>
+    <h1>☕ Worker Panel</h1>
 
-  <div id="orders">Loading...</div>
+    <h2>📦 Current Orders</h2>
+    <div id="orders"></div>
+
+    <h2>📜 Previous Orders</h2>
+    <div id="history"></div>
 
 </div>
 <script>
@@ -67,12 +81,24 @@ const BASE = "";
 
 async function loadOrders()
 {
-    const res = await fetch(BASE + "/robot/get_order");
+    const res = await fetch(
+        BASE + "/robot/get_order"
+    );
+
     const orders = await res.json();
 
-    const container = document.getElementById("orders");
+    console.log("ORDERS:", orders);
+
+    const container =
+        document.getElementById("orders");
 
     container.innerHTML = "";
+
+    if (!Array.isArray(orders))
+    {
+        console.log("Not Array:", orders);
+        return;
+    }
 
     if (orders.length === 0)
     {
@@ -92,9 +118,17 @@ async function loadOrders()
             <b>Lon:</b> ${order.lon}<br>
             <b>Status:</b> ${order.status}<br><br>
 
-            <button class="btn ready"
+            <button
+                class="btn ready"
                 onclick="approveOrder(${order.id})">
                 ✅ Approve
+            </button>
+
+            <button
+                class="btn"
+                style="background:#EF4444;color:white;"
+                onclick="declineOrder(${order.id})">
+                ❌ Decline
             </button>
 
         </div>
@@ -121,7 +155,99 @@ async function approveOrder(id)
 loadOrders();
 
 setInterval(loadOrders, 3000);
+async function cancelOrder(id)
+{
+    const response = await fetch(
+        BASE + "/robot/cancel/" + id,
+        {
+            method: "POST"
+        }
+    );
 
+    const data = await response.json();
+
+    alert(data.message);
+
+    loadOrders();
+}
+
+async function cancelCurrentOrder()
+{
+    const active =
+        await fetch(
+            BASE + "/api/robot/active"
+        );
+
+    const order = await active.json();
+
+    if (!order.id)
+    {
+        alert("No Active Mission");
+        return;
+    }
+
+    const response =
+        await fetch(
+            BASE + "/robot/cancel/" + order.id,
+            {
+                method:"POST"
+            }
+        );
+
+    const data = await response.json();
+
+    alert(data.message);
+}
+async function declineOrder(id)
+{
+    const res = await fetch(
+        BASE + "/robot/decline/" + id,
+        {
+            method:"POST"
+        }
+    );
+
+    const data = await res.json();
+
+    alert(data.message);
+
+    loadOrders();
+}
+
+async function loadHistory()
+{
+    const res =
+        await fetch(
+            BASE + "/robot/history"
+        );
+
+    const orders =
+        await res.json();
+
+    const container =
+        document.getElementById("history");
+
+    container.innerHTML = "";
+
+    orders.forEach(order =>
+    {
+        container.innerHTML += `
+        <div class="order">
+
+            <b>Order #${order.id}</b><br>
+            Item: ${order.item}<br>
+            Status:
+            <b>${order.status}</b>
+
+        </div>
+        `;
+    });
+}
+loadOrders();
+loadHistory();
+
+setInterval(loadOrders, 3000);
+setInterval(loadHistory, 3000);
 </script>
 </body>
 </html>

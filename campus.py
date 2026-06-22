@@ -5912,7 +5912,6 @@ def robot_task():
     })
 
 
-
 @app.route('/api/robot/update', methods=['POST'])
 def robot_update():
 
@@ -5943,6 +5942,8 @@ WHERE status='moving'
     })
 HOME_LAT = 29.932962
 HOME_LON = 30.920956
+
+
 @app.route('/api/robot/home')
 def robot_home():
 
@@ -5950,6 +5951,9 @@ def robot_home():
         "lat": HOME_LAT,
         "lon": HOME_LON
     })
+
+
+
 @app.route('/api/robot/status/<int:id>')
 def robot_status(id):
 
@@ -5973,6 +5977,8 @@ def robot_status(id):
     return jsonify({
         "status":"not_found"
     })
+
+
 
 
 
@@ -6002,6 +6008,104 @@ def current_task():
         "status":"none"
     })
 
+
+@app.route('/robot/cancel/<int:id>', methods=['POST'])
+def cancel_order(id):
+
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        UPDATE robot_orders
+        SET status='cancelled'
+        WHERE id=%s
+    """,(id,))
+
+    db.commit()
+
+    cursor.close()
+    db.close()
+
+    return jsonify({
+        "message":"Mission Cancelled"
+    })
+
+
+@app.route('/robot/history')
+def robot_history():
+
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT *
+        FROM robot_orders
+        ORDER BY id DESC
+        LIMIT 50
+    """)
+
+    orders = cursor.fetchall()
+
+    cursor.close()
+    db.close()
+
+    return jsonify(orders)
+
+
+
+@app.route('/robot/decline/<int:id>', methods=['POST'])
+def robot_decline(id):
+
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        UPDATE robot_orders
+        SET status = 'declined'
+        WHERE id = %s
+    """, (id,))
+
+    db.commit()
+
+    if cursor.rowcount == 0:
+        cursor.close()
+        db.close()
+
+        return jsonify({
+            "success": False,
+            "message": "Order not found"
+        }), 404
+
+    cursor.close()
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "message": "Order Declined"
+    })
+
+
+
+@app.route('/robot/home/<int:id>', methods=['POST'])
+def robot_home(id):
+
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        UPDATE robot_orders
+        SET status='completed'
+        WHERE id=%s
+    """,(id,))
+
+    db.commit()
+
+    cursor.close()
+    db.close()
+
+    return jsonify({
+        "message":"Robot Returned Home"
+    })
 
 ####################################
 from flask import render_template
